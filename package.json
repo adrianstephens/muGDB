@@ -34,18 +34,14 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./src",
-    "watch": "tsc -watch -p ./src",
-    "lint": "gts lint",
-    "clean": "gts clean",
-    "fix": "gts fix",
+		"lint": "eslint \"src/**/*.ts\"",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
     "prepare": "npm run compile",
     "pretest": "npm run compile",
     "posttest": "npm run lint"
   },
   "dependencies": {
-    "await-notify": "1.0.1",
-    "tail-stream": "^0.3.4",
     "vscode-debugadapter": "^1.49.0"
   },
   "devDependencies": {
@@ -61,13 +57,11 @@
     "ts-loader": "^8.1.0",
     "typescript": "^4.3.5",
     "vsce": "^1.96.1",
-    "vscode-debugadapter-testsupport": "^1.49.0",
-    "gts": "^3.1.0"
+    "vscode-debugadapter-testsupport": "^1.49.0"
   },
   "main": "./out/extension",
   "activationEvents": [
-    "onStartupFinished",
-    "onDebug"
+    "onDebugResolve:vgdb"
   ],
   "workspaceTrust": {
     "request": "never"
@@ -90,11 +84,6 @@
           "type": "boolean",
           "default": true,
           "description": "Enable debug console command completions."
-        },
-        "vgdb.enablePrettyPrinters": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable GDB python pretty printers."
         }
       }
     },
@@ -127,25 +116,10 @@
                 "description": "Absolute path of program to debug",
                 "default": "${workspaceFolder}/${command:AskForProgramName}"
               },
-              "stopOnEntry": {
-                "type": "boolean",
-                "description": "Automatically stop after launch.",
-                "default": true
-              },
               "args": {
                 "type": "array",
                 "description": "Arguments to pass to inferior",
                 "default": []
-              },
-              "cwd": {
-                "type": "string",
-                "description": "Working directory of the target",
-                "default": "${workspaceFolder}"
-              },
-              "env": {
-                "type": "object",
-                "description": "Environment variables to set in debugger shell",
-                "default": {}
               },
               "externalConsole": {
                 "type": "boolean",
@@ -162,30 +136,14 @@
                 "description": "Arguments to pass to the debugger",
                 "default": []
               },
-              "debuggerServerAddress": {
-                "type": "string",
-                "description": "TCP Address with port (or serial) for the remote GDB server",
-                "default": "localhost"
-              },
-              "debuggerServerPath": {
-                "type": "string",
-                "description": "Path to remote GDB server",
-                "default": "gdb"
-              },
-              "debuggerServerArgs": {
-                "type": "array",
-                "description": "Arguments to pass to the remote debugger",
-                "default": []
-              },
-
               "startupCmds": {
                 "type": "array",
                 "description": "Startup commands to run in GDB",
                 "default": []
               },
-              "sharedLibraries": {
+              "postLoadCmds": {
                 "type": "array",
-                "description": "Disable auto shared library loads in GDB and only load these. If this setting is specified, it will override any auto-solib-add GDB setting",
+                "description": "Commands to run in GDB after connection",
                 "default": []
               },
               "debug": {
@@ -207,6 +165,11 @@
                 "type": "boolean",
                 "description": "If enabled, absolute file paths will be used to set breakpoints. Otherwise, only the filename will be used. Useful when your debug symbols are referencing relative paths and not absolute paths.",
                 "default": true
+              },
+              "sharedLibraries": {
+                "type": "array",
+                "description": "Disable auto shared library loads in GDB and only load these. If this setting is specified, it will override any auto-solib-add GDB setting",
+                "default": []
               }
             }
           },
@@ -223,6 +186,11 @@
               "type": "string",
               "description": "Path to GDB executable",
               "default": "gdb"
+            },
+            "debuggerArgs": {
+              "type": "array",
+              "description": "Arguments to pass to the debugger",
+              "default": []
             },
             "debug": {
               "type": "string",
@@ -243,8 +211,13 @@
               "type": "boolean",
               "description": "If enabled, absolute file paths will be used to set breakpoints. Otherwise, only the filename will be used. Useful when your debug symbols are referencing relative paths and not absolute paths.",
               "default": true
+            },
+            "sharedLibraries": {
+              "type": "array",
+              "description": "Disable auto shared library loads in GDB and only load these. If this setting is specified, it will override any auto-solib-add GDB setting",
+              "default": []
             }
-          }
+        }
         },
         "initialConfigurations": [
           {
@@ -266,7 +239,6 @@
               "name": "C/C++ Debug Launch",
               "debugger": "gdb",
               "program": "${workspaceFolder}/a.out",
-              "args": [],
               "cwd": "${workspaceFolder}"
             }
           },

@@ -1,23 +1,8 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-// eslint-disable-next-line node/no-extraneous-import
-import {DebugProtocol} from 'vscode-debugprotocol';
-import {
-  CompletionItem,
-  ContinuedEvent,
-  InitializedEvent,
-  LoggingDebugSession,
-  OutputEvent,
-  StackFrame,
-  StoppedEvent,
-  TerminatedEvent,
-  Thread,
-  ThreadEvent,
-  Variable,
-} from 'vscode-debugadapter';
-
 import * as vscode from 'vscode';
-import {OutputChannel} from 'vscode';
-import {GDB} from './debuggers/gdb/GDB';
+import * as adapter from 'vscode-debugadapter';
+import {DebugProtocol} from 'vscode-debugprotocol';
+import {GDB} from './gdb/GDB';
+
 import {
   Debugger,
   DebuggerVariable,
@@ -25,20 +10,19 @@ import {
   EXCEPTION_THROW,
   SCOPE_LOCAL,
   SCOPE_REGISTERS,
-} from './debuggers/Debugger';
-import {
-  EVENT_ERROR_FATAL,
-  EVENT_OUTPUT,
-  EVENT_RUNNING,
-  EVENT_BREAKPOINT_HIT,
-  EVENT_END_STEPPING_RANGE,
-  EVENT_FUNCTION_FINISHED,
-  EVENT_EXITED_NORMALLY,
-  EVENT_SIGNAL,
-  EVENT_PAUSED,
-  EVENT_ERROR,
-  EVENT_THREAD_NEW,
-} from './debuggers/gdb/GDB';
+} from './Debugger';
+
+export const EVENT_OUTPUT               = 'output';
+export const EVENT_RUNNING              = 'running';
+export const EVENT_BREAKPOINT_HIT       = 'breakpoint-hit';
+export const EVENT_END_STEPPING_RANGE   = 'end-stepping-range';
+export const EVENT_FUNCTION_FINISHED    = 'function-finished';
+export const EVENT_EXITED_NORMALLY      = 'exited-normally';
+export const EVENT_SIGNAL               = 'signal-received';
+export const EVENT_PAUSED               = 'paused';
+export const EVENT_ERROR                = 'error';
+export const EVENT_ERROR_FATAL          = 'error-fatal';
+export const EVENT_THREAD_NEW           = 'thread-created';
 
 export enum DebugLoggingLevel {
   OFF = 'off',
@@ -46,38 +30,37 @@ export enum DebugLoggingLevel {
   VERBOSE = 'verbose',
 }
 
-export interface LaunchRequestArguments
-  extends DebugProtocol.LaunchRequestArguments {
+class StoppedEvent extends adapter.StoppedEvent {
+  constructor(reason: string, threadID: number, allThreads?: boolean) {
+    super(reason, threadID);
+    (this.body as any).allThreadsStopped = allThreads;
+  }
+}
+
+export type LaunchRequestArguments = {request: 'launch'} & DebugProtocol.LaunchRequestArguments & {
   /** Absolute program to path to debug */
   program: string;
-  /** Should inferior immediately stop? */
-  stopOnEntry?: boolean;
-  /** Arguments to pass to inferior */
+  /** program arguments */
   args?: string[];
-  /** Launch directory */
-  cwd: string;
   /** Debugger path */
   debugger: string;
   /** Debugger arguments */
   debuggerArgs?: string[];
-  /** Target name */
-  name: string;
   /** GDB commands to run on startp */
   startupCmds?: string[];
-  /** Shell variables to set in debugger terminal */
-  envVars?: {};
-  /** Shared libraries for deferred symbol loading */
-  sharedLibraries?: string[];
+  /** GDB commands to run after connection */
+  postLoadCmds?: string[];
   /** How verbose should debug logging be? */
   debug?: DebugLoggingLevel;
   /** Should inferior terminal be in VSCode? */
   externalConsole?: boolean;
   /** Should absolute filepaths be used? */
   useAbsoluteFilePaths?: boolean;
+  /** Shared libraries for deferred symbol loading */
+  sharedLibraries?: string[];
 }
 
-export interface AttachRequestArguments
-  extends DebugProtocol.AttachRequestArguments {
+export type AttachRequestArguments = {request: 'attach'} & DebugProtocol.AttachRequestArguments & {
   /** PID of process to debug. */
   program: number;
   /** Debugger path */
@@ -92,18 +75,34 @@ export interface AttachRequestArguments
   useAbsoluteFilePaths?: boolean;
   /** Shared libraries for deferred symbol loading */
   sharedLibraries?: string[];
-  /** Launch directory */
-  cwd: string;
 }
 
 // This is the main class which implements the debug adapter protocol. It will
 // instantiate a separate GDB object which handles spawning and interacting with
 // the GDB process (i.e. parsing MI output). The session handles requests and
 // responses with the IDE
-export class DebugSession extends LoggingDebugSession {
+export class DebugSession extends adapter.DebugSession {
   private debugger: Debugger;
 
-  constructor(private readonly outputChannel: OutputChannel) {
+  sendEvent(event: DebugProtocol.Event): void {
+    if (event.event !== 'output')
+      this.debugger.log(`EVENT: ${JSON.stringify(event)}`);
+    super.sendEvent(event);
+  }
+  sendResponse(response: DebugProtocol.Response): void {
+    this.debugger.log(`RESPONSE: ${JSON.stringify(response)}`);
+    super.sendResponse(response);
+  }
+  sendRequest(command: string, args: any, timeout: number, cb: (response: DebugProtocol.Response) => void): void{
+    this.debugger.log(`REQUEST: ${JSON.stringify({command, args})}`);
+    super.sendRequest(command, args, timeout, cb);
+  }
+  dispatchRequest(request: DebugProtocol.Request): void {
+    if (this.debugger)
+      this.debugger.log(`DISPATCH: ${JSON.stringify(request)}`);
+    super.dispatchRequest(request);
+  }
+  constructor(private readonly outputChannel: vscode.OutputChannel) {
     super();
   }
 
@@ -130,9 +129,7 @@ export class DebugSession extends LoggingDebugSession {
       supportsSteppingGranularity: true,
       supportsExceptionInfoRequest: true,
       supportsLogPoints: true,
-      supportsCompletionsRequest: DebugSession.getSettingValue(
-        'enableCommandCompletions'
-      ),
+      supportsCompletionsRequest: DebugSession.getSettingValue('enableCommandCompletions'),
       supportsStepBack: enableReverseDebugging,
       supportsFunctionBreakpoints: true,
       supportsGotoTargetsRequest: true,
@@ -143,7 +140,7 @@ export class DebugSession extends LoggingDebugSession {
     };
 
     this.sendResponse(response);
-    this.sendEvent(new InitializedEvent());
+    this.sendEvent(new adapter.InitializedEvent());
   }
 
   /**
@@ -175,11 +172,12 @@ export class DebugSession extends LoggingDebugSession {
   ) {
     this.debugger.launchInferior().then(() => {
       this.debugger.setInferiorLaunched(true);
-      vscode.commands
-        .executeCommand('workbench.action.terminal.clear')
-        .then(() => {
-          this.sendResponse(response);
-        });
+      this.sendResponse(response);
+    //  vscode.commands
+    //    .executeCommand('workbench.action.terminal.clear')
+    //    .then(() => {
+    //      this.sendResponse(response);
+    //    });
     });
   }
 
@@ -195,7 +193,7 @@ export class DebugSession extends LoggingDebugSession {
   }
 
   protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
-    this.debugger.getThreads().then((threads: Thread[]) => {
+    this.debugger.getThreads().then((threads: adapter.Thread[]) => {
       response.body = {
         threads: threads,
       };
@@ -207,7 +205,7 @@ export class DebugSession extends LoggingDebugSession {
     response: DebugProtocol.StackTraceResponse,
     args: DebugProtocol.StackTraceArguments
   ): void {
-    this.debugger.getStackTrace(args.threadId).then((stack: StackFrame[]) => {
+    this.debugger.getStackTrace(args.threadId).then((stack: adapter.StackFrame[]) => {
       response.body = {
         stackFrames: stack,
         totalFrames: stack.length - 1,
@@ -246,7 +244,7 @@ export class DebugSession extends LoggingDebugSession {
     this.debugger
       .getVariables(args.variablesReference)
       .then((vars: Map<number, DebuggerVariable>) => {
-        const variables: Variable[] = [];
+        const variables: adapter.Variable[] = [];
 
         vars.forEach(variable => {
           // If this is a string strip out special chars
@@ -254,7 +252,7 @@ export class DebugSession extends LoggingDebugSession {
             variable.value = this.debugger.sanitize(variable.value, false);
           }
 
-          const v: DebugProtocol.Variable = new Variable(
+          const v: DebugProtocol.Variable = new adapter.Variable(
             variable.name,
             variable.value,
             variable.numberOfChildren ? variable.referenceID : 0
@@ -372,7 +370,7 @@ export class DebugSession extends LoggingDebugSession {
   ): void {
     this.debugger
       .getCommandCompletions(args.text)
-      .then((completions: CompletionItem[]) => {
+      .then((completions: adapter.CompletionItem[]) => {
         response.body = {
           targets: completions,
         };
@@ -392,14 +390,25 @@ export class DebugSession extends LoggingDebugSession {
 
     switch (args.context) {
       case 'repl':
+        if (args.expression.startsWith('-')) {
+          this.debugger.sendCommand(args.expression).then(record => {
+            this.sendEvent(
+              new adapter.OutputEvent(record.prettyPrint() + '\n', 'console')
+            );
+          });
+        } else {
+          this.debugger.sendUserCommand(args.expression, args.frameId);
+        }
+
         // Do not allow UI to react to "paused" state
+        /*
         this.debugger.pause(undefined, true).then((wasPaused: boolean) => {
           const isMICommand = args.expression.startsWith('-');
 
           if (isMICommand) {
             this.debugger.sendCommand(args.expression).then(record => {
               this.sendEvent(
-                new OutputEvent(record.prettyPrint() + '\n', 'console')
+                new adapter.OutputEvent(record.prettyPrint() + '\n', 'console')
               );
             });
           } else {
@@ -414,6 +423,7 @@ export class DebugSession extends LoggingDebugSession {
             this.sendResponse(response);
           }
         });
+        */
         break;
 
       case 'watch':
@@ -528,42 +538,42 @@ export class DebugSession extends LoggingDebugSession {
         'vGDB has encountered a fatal error. Please check the vGDB output channel and create an issue at http://www.github.com/penagos/vgdb/issues'
       );
       this.error(error);
-      this.sendEvent(new TerminatedEvent());
+      this.sendEvent(new adapter.TerminatedEvent());
     });
 
     // Pipe to debug console
     this.debugger.on(EVENT_OUTPUT, (text: string, type: string) => {
       // Massage GDB output as much as possible
-      this.sendEvent(new OutputEvent(text, type));
+      this.sendEvent(new adapter.OutputEvent(text, type));
     });
 
     // Events triggered by debuggeer
     this.debugger.on(EVENT_RUNNING, (threadID: number, allThreads: boolean) => {
-      this.sendEvent(new ContinuedEvent(threadID, allThreads));
+      this.sendEvent(new adapter.ContinuedEvent(threadID, allThreads));
     });
 
-    this.debugger.on(EVENT_BREAKPOINT_HIT, (threadID: number) => {
-      this.sendEvent(new StoppedEvent('breakpoint', threadID));
+    this.debugger.on(EVENT_BREAKPOINT_HIT, (threadID: number, allThreads?: boolean) => {
+      this.sendEvent(new StoppedEvent('breakpoint', threadID, allThreads));
     });
 
-    this.debugger.on(EVENT_END_STEPPING_RANGE, (threadID: number) => {
-      this.sendEvent(new StoppedEvent('step', threadID));
+    this.debugger.on(EVENT_END_STEPPING_RANGE, (threadID: number, allThreads?: boolean) => {
+      this.sendEvent(new StoppedEvent('step', threadID, allThreads));
     });
 
-    this.debugger.on(EVENT_FUNCTION_FINISHED, (threadID: number) => {
-      this.sendEvent(new StoppedEvent('step-out', threadID));
+    this.debugger.on(EVENT_FUNCTION_FINISHED, (threadID: number, allThreads?: boolean) => {
+      this.sendEvent(new StoppedEvent('step-out', threadID, allThreads));
     });
 
     this.debugger.on(EVENT_EXITED_NORMALLY, () => {
-      this.sendEvent(new TerminatedEvent());
+      this.sendEvent(new adapter.TerminatedEvent());
     });
 
-    this.debugger.on(EVENT_SIGNAL, (threadID: number) => {
-      this.sendEvent(new StoppedEvent('exception', threadID));
+    this.debugger.on(EVENT_SIGNAL, (threadID: number, allThreads?: boolean) => {
+      this.sendEvent(new StoppedEvent('exception', threadID, allThreads));
     });
 
-    this.debugger.on(EVENT_PAUSED, (threadID: number) => {
-      this.sendEvent(new StoppedEvent('pause', threadID));
+    this.debugger.on(EVENT_PAUSED, (threadID: number, allThreads?: boolean) => {
+      this.sendEvent(new StoppedEvent('pause', threadID, allThreads));
     });
 
     this.debugger.on(EVENT_ERROR, (msg: string) => {
@@ -575,7 +585,7 @@ export class DebugSession extends LoggingDebugSession {
     });
 
     this.debugger.on(EVENT_THREAD_NEW, (threadID: number) => {
-      this.sendEvent(new ThreadEvent('started', threadID));
+      this.sendEvent(new adapter.ThreadEvent('started', threadID));
     });
   }
 }

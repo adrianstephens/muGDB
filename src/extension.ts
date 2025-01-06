@@ -63,6 +63,8 @@ class GDBConfigurationProvider implements vscode.DebugConfigurationProvider {
 }
 
 export function activate(context: vscode.ExtensionContext) {
+  console.log('vGDB extension is now active!');
+  
   context.subscriptions.push(
     vscode.commands.registerCommand('extension.vgdb.getProgramName', () => {
       return vscode.window.showInputBox({
