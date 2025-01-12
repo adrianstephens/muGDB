@@ -1,21 +1,16 @@
 {
   "compilerOptions": {
+		"target": "es2022",
+		"module": "CommonJS",
+    "lib": [
+      "es2022"
+    ],
     "rootDir": "src",
     "outDir": "out",
-		"module": "commonjs",
-		"target": "es6",
-
-		"noImplicitAny": false,
-		"removeComments": false,
-		"noImplicitThis": true,
-		"inlineSourceMap": false,
-		"sourceMap": true,
-		"preserveConstEnums": true,
-		"strictNullChecks": true,
-		"noUnusedParameters": false
+    "sourceMap": true,
+    "strict": true,
   },
   "include": [
-    "src/**/*.ts",
-    "test/**/*.ts"
+    "src/extension.ts"
   ]
 }

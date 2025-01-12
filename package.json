@@ -1,92 +1,33 @@
 {
-  "name": "vgdb",
-  "displayName": "vGDB",
-  "version": "1.3.2",
-  "publisher": "penagos",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
-  },
-  "description": "C/C++ Debugging Support for Visual Studio Code",
-  "author": {
-    "name": "Luis Penagos",
-    "email": "luis@penagos.co"
-  },
+  "name": "mugdb",
+  "displayName": "muGDB",
+  "description": "minimal GDB support for Visual Studio Code",
+  "version": "0.0.0",
+  "publisher": "isopodlabs",
   "license": "MIT",
   "keywords": [
     "C++",
     "C",
     "GDB",
-    "VGDB"
+    "muGDB"
   ],
-  "icon": "resources/vgdb.png",
+  "icon": "assets/icon.png",
   "engines": {
-    "vscode": "^1.59.0"
+    "vscode": "^1.59.0",
+     "node": ">=12.0.0"
   },
   "categories": [
     "Debuggers"
   ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/penagos/vgdb.git"
-  },
-  "bugs": {
-    "url": "https://github.com/penagos/vgdb/issues"
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run compile",
-		"lint": "eslint \"src/**/*.ts\"",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "prepare": "npm run compile",
-    "pretest": "npm run compile",
-    "posttest": "npm run lint"
-  },
-  "dependencies": {
-    "vscode-debugadapter": "^1.49.0"
-  },
-  "devDependencies": {
-    "@types/glob": "^7.1.4",
-    "@types/mocha": "^9.0.0",
-    "@types/node": "^14.14.37",
-    "@types/vscode": "^1.59.0",
-    "@typescript-eslint/eslint-plugin": "^4.29.3",
-    "@typescript-eslint/parser": "^4.29.3",
-    "eslint": "^7.32.0",
-    "glob": "^7.1.7",
-    "mocha": "^9.1.0",
-    "ts-loader": "^8.1.0",
-    "typescript": "^4.3.5",
-    "vsce": "^1.96.1",
-    "vscode-debugadapter-testsupport": "^1.49.0"
-  },
+  "repository": "https://github.com/penagos/vgdb.git",
   "main": "./out/extension",
   "activationEvents": [
-    "onDebugResolve:vgdb"
+    "onDebugResolve:mugdb"
   ],
   "workspaceTrust": {
     "request": "never"
   },
   "contributes": {
-    "configuration": {
-      "title": "vGDB",
-      "properties": {
-        "vgdb.showErrorPopup": {
-          "type": "boolean",
-          "default": false,
-          "description": "Show popup error window on invalid GDB command"
-        },
-        "vgdb.enableReverseDebugging": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable reverse debugging support. Requires GDB 7+ and a compatible CPU/kernel. Note: many instructions are unsupported, this may considerably slow down debugging."
-        },
-        "vgdb.enableCommandCompletions": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable debug console command completions."
-        }
-      }
-    },
     "breakpoints": [
       {
         "language": "cpp"
@@ -97,9 +38,9 @@
     ],
     "debuggers": [
       {
-        "type": "vgdb",
-        "label": "C/C++ Debug (vGDB)",
-        "program": "./out/debugAdapter.js",
+        "type": "mugdb",
+        "label": "GDB Debug (muGDB)",
+        "program": "./out/bogus.js",
         "runtime": "node",
         "languages": [
           "c",
@@ -108,24 +49,9 @@
         "configurationAttributes": {
           "launch": {
             "required": [
-              "program"
+              "debugger"
             ],
             "properties": {
-              "program": {
-                "type": "string",
-                "description": "Absolute path of program to debug",
-                "default": "${workspaceFolder}/${command:AskForProgramName}"
-              },
-              "args": {
-                "type": "array",
-                "description": "Arguments to pass to inferior",
-                "default": []
-              },
-              "externalConsole": {
-                "type": "boolean",
-                "description": "If true, debug target will spawn a new terminal window",
-                "default": false
-              },
               "debugger": {
                 "type": "string",
                 "description": "Path to GDB executable",
@@ -135,6 +61,21 @@
                 "type": "array",
                 "description": "Arguments to pass to the debugger",
                 "default": []
+              },
+              "capabilities": {
+                "type": "object",
+                "description": "Debug adapter specific capabilities",
+                "default": {}
+              },
+              "cwd": {
+                "type": "string",
+                "description": "Working directory of the debugger",
+                "default": "${workspaceFolder}"
+              },
+              "env": {
+                "type": "object",
+                "description": "Environment variables to pass to debugger",
+                "default": {}
               },
               "startupCmds": {
                 "type": "array",
@@ -146,9 +87,14 @@
                 "description": "Commands to run in GDB after connection",
                 "default": []
               },
-              "debug": {
+              "terminateCmds": {
+                "type": "array",
+                "description": "Commands to run in GDB when terminated",
+                "default": []
+              },
+              "logging": {
                 "type": "string",
-                "description": "Toggle the verbosity of debug logging. Useful if you need to see more verbose GDB output such as shared library load events",
+                "description": "Set the verbosity of debug logging",
                 "enum": [
                   "off",
                   "basic",
@@ -156,10 +102,15 @@
                 ],
                 "enumDescriptions": [
                   "Disable all debug logging",
-                  "Enable command request and response logging in vGDB Output Channel",
+                  "Enable command request and response logging in muGDB Output Channel",
                   "Enable all GDB MI output in Debug Console"
                 ],
                 "default": "off"
+              },
+              "externalConsole": {
+                "type": "boolean",
+                "description": "If true, debug target will spawn a new terminal window",
+                "default": false
               },
               "useAbsoluteFilePaths": {
                 "type": "boolean",
@@ -172,92 +123,29 @@
                 "default": []
               }
             }
-          },
-          "attach": {
-            "required": [
-              "program"
-            ],
-            "program": {
-              "type": "number",
-              "description": "PID of program to debug",
-              "default": "\\${command:AskForProgramPID}"
-            },
-            "debugger": {
-              "type": "string",
-              "description": "Path to GDB executable",
-              "default": "gdb"
-            },
-            "debuggerArgs": {
-              "type": "array",
-              "description": "Arguments to pass to the debugger",
-              "default": []
-            },
-            "debug": {
-              "type": "string",
-              "description": "Toggle the verbosity of debug logging. Useful if you need to see more verbose GDB output such as shared library load events",
-              "enum": [
-                "off",
-                "basic",
-                "verbose"
-              ],
-              "enumDescriptions": [
-                "Disable all debug logging",
-                "Enable command request and response logging in vGDB Output Channel",
-                "Enable all GDB MI output in Debug Console"
-              ],
-              "default": "off"
-            },
-            "useAbsoluteFilePaths": {
-              "type": "boolean",
-              "description": "If enabled, absolute file paths will be used to set breakpoints. Otherwise, only the filename will be used. Useful when your debug symbols are referencing relative paths and not absolute paths.",
-              "default": true
-            },
-            "sharedLibraries": {
-              "type": "array",
-              "description": "Disable auto shared library loads in GDB and only load these. If this setting is specified, it will override any auto-solib-add GDB setting",
-              "default": []
-            }
-        }
-        },
-        "initialConfigurations": [
-          {
-            "type": "vgdb",
-            "request": "launch",
-            "name": "C/C++ Debug",
-            "program": "${workspaceFolder}/a.out",
-            "args": [],
-            "cwd": "${workspaceFolder}"
           }
-        ],
-        "configurationSnippets": [
-          {
-            "label": "vGDB C/C++ Debug: Launch",
-            "description": "Start GDB for debugging a C/C++ program",
-            "body": {
-              "type": "vgdb",
-              "request": "launch",
-              "name": "C/C++ Debug Launch",
-              "debugger": "gdb",
-              "program": "${workspaceFolder}/a.out",
-              "cwd": "${workspaceFolder}"
-            }
-          },
-          {
-            "label": "C/C++ Debug: Attach (vGDB)",
-            "description": "Attach GDB to running C/C++ program",
-            "body": {
-              "type": "vgdb",
-              "request": "attach",
-              "name": "C/C++ Debug Attach",
-              "program": "^\"\\${command:AskForProgramPID}\""
-            }
-          }
-        ],
-        "variables": {
-          "AskForProgramName": "extension.vgdb.getProgramName",
-          "AskForProgramPID": "extension.vgdb.getProgramPID"
         }
       }
     ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "lint": "eslint \"src/**/*.ts\"",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "posttest": "npm run lint"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.37",
+    "@types/vscode": "^1.59.0",
+    "@typescript-eslint/eslint-plugin": "^4.29.3",
+    "@typescript-eslint/parser": "^4.29.3",
+    "@vscode/debugprotocol": "^1.68.0",
+    "eslint": "^7.32.0",
+    "eslint-plugin-node": "^11.1.0",
+    "ts-loader": "^8.1.0",
+    "vsce": "^2.15.0"
   }
 }
