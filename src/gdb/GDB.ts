@@ -10,8 +10,7 @@ import {
 	LaunchRequestArguments,
 	adjustMemory,
 	memoryReference,
-	SCOPE_LOCAL,
-	SCOPE_REGISTERS,
+	SCOPE,
 } from '../DebugSession';
 
 interface Register {
@@ -39,13 +38,13 @@ class GDBException extends DebuggerException {
 	}
 }
 
-interface DebuggerVariable {
+interface Variable {
 	name:							string;
 	debuggerName: 		string;	// The unique "name" assigned by the underlying MI debugger need not be identical to the actual source location name
-	numberOfChildren: number;
-	referenceID: 			number;
 	value: 						string;
 	type: 						string;
+	referenceID: 			number;	// 0 if no children
+	children?:				Record<string, Variable>;
 }
 
 
@@ -57,35 +56,21 @@ class Deferred {
 		if (!ready)
 			this.reset();
 	}
-	resolve() {
+	fire() {
 		if (this.resolver) {
 			this.resolver();
 			this.resolver = undefined;
 		}
 	}
-
 	reset() {
 		this.promise = new Promise(resolve => this.resolver = resolve);
 	}
-
 	async wait() {
 			await this.promise;
 	}
-
 	then<T = void>(onfulfilled?: () => T | PromiseLike<T>): Promise<T> {
 		return this.promise.then(onfulfilled);
 	}
-}
-
-function quoted(str: string): string {
-	return '"' + str.replace(/"/g, '\\"') + '"';
-}
-
-function breakpointConditions(condition?: string, hitCondition?: string) {
-	return `${condition ? `-c ${quoted(condition)}` : ''} ${hitCondition ? `-i ${hitCondition}` : ''}`;
-}
-function granularity(granularity?: string) {
-	return granularity === 'instruction' ? '-instruction' : '';
 }
 
 // bit manipulation
@@ -110,21 +95,32 @@ const outputs: Record<MI.StreamRecordType, string> = {
 	[MI.StreamRecordType.LOG]:			'log',
 }
 
+// command helpers
+function quoted(str: string): string {
+	return '"' + str.replace(/"/g, '\\"') + '"';
+}
+function breakpointConditions(condition?: string, hitCondition?: string) {
+	return `${condition ? `-c ${quoted(condition)}` : ''} ${hitCondition ? `-i ${hitCondition}` : ''}`;
+}
+function granularity(granularity?: string) {
+	return granularity === 'instruction' ? '-instruction' : '';
+}
+
+function isCompositeValue(value: string): boolean {
+	return !!/(^0x)|{|<|\[|struct|class/.exec(value);
+}
+
 export class GDB extends DebugSession {
-	// Default path to MI debugger. If none is specified in the launch config we will fallback to this path
 	protected debuggerPath = 'gdb';
-
-	// This instance will handle all MI output parsing
-	private parser = new MI.MIParser();
-
-	// Used to sync MI inputs and outputs. Value increases by 1 with each command issued
-	private token = 0;
+	private		parser = new MI.MIParser();
 
 	// Libraries for which debugger has loaded debug symbols for
-	private loadedLibraries: Record<string, boolean> = {};
+	private		loadedLibraries: Record<string, boolean> = {};
 
+	// Used to sync MI inputs and outputs. Value increases by 1 with each command issued
+	private		token = 0;
 	// Callbacks to execute when a command identified by "token" is resolved by the debugger
-	private handlers: {[token: number]: (record: MI.OutputRecord) => void} = [];
+	private		handlers: {[token: number]: (record: MI.OutputRecord) => void} = [];
 
 	private breakpoints:					Record<string, number[]> = {};
 	private logBreakpoints:			 	Record<number, string> = {};
@@ -134,17 +130,19 @@ export class GDB extends DebugSession {
 	private instsBreakpoints: 		Record<string, number> = {};
 
 	// Mapping of symbolic variable names to GDB variable references
-	private variables: DebuggerVariable[] = [];
+	private locals:		Variable[] = [];
+	private globals:	Variable[] = [];
+	private statics:	Record<string, string[]> = {};
 
-	// Mapping of register numbers to their names
-	private registers: Register[] = [];
-	private registerGroups: RegisterGroup[] = [];
+	private registers:			Register[] 			= [];
+	private registerGroups:	RegisterGroup[]	= [];
 
-	private ignorePause	= false;
-	private stopped 		= new Deferred(true);
-	private ready 			= new Deferred(false);
+	private ignorePause		= false;
+	private stopped 			= new Deferred(true);
+	private ready 				= new Deferred(false);
 	private startupPromises: Promise<void>[] = [];
 
+	// when set, capture debugger output lines
 	private capture?: 	string[];
 
 	private frameCommand(frameId?: number) {
@@ -152,35 +150,33 @@ export class GDB extends DebugSession {
 	}
 
 	public sendCommand(command: string): Promise<MI.OutputRecord> {
-		command = `${++this.token + command}`;
-
-		return new Promise(resolve => {
-			this.sendServer(command);
-			this.handlers[this.token] = (record: MI.OutputRecord) => resolve(record);
+		return new Promise((resolve, reject) => {
+			++this.token;
+			this.handlers[this.token] = record => {
+				if (record.isError)
+					reject(record.results.msg);
+				else
+					resolve(record);
+			};
+			this.sendServer(this.token + command);
 		});
 	}
 
 	public async sendUserCommand(command: string, frameId?: number): Promise<void> {
 		const interpreter = command.startsWith('-') ? 'mi' : 'console';
-
-		const cmd = `-interpreter-exec ${this.frameCommand(frameId)} ${interpreter} ${quoted(command)}`;
-
-		const record = await this.sendCommand(cmd);
-		// If an error has resulted, also send an error event to show it to the user
-		if (record.isError)
-			this.error(record.results['msg'].replace(/\\/g, ''));
+		await this.sendCommand(`-interpreter-exec ${this.frameCommand(frameId)} ${interpreter} ${quoted(command)}`);
 	}
 
 	protected async sendCommands(commands: string[]): Promise<void> {
 		await Promise.all(commands.map(cmd => this.sendCommand(cmd)));
 	}
 
-
-	private gotStop(reason: string, allThreadsStopped?: boolean): void {
+	private sendStopped(reason: string, allThreadsStopped?: boolean): void {
 		this.sendEvent(new Adapter.StoppedEvent({reason, threadId: this.threadId, allThreadsStopped}))
-		this.stopped.resolve();
+		this.stopped.fire();
 	}
 
+	// process one line from debugger
 	protected recvServer(line: string): void {
 		try {
 			const record = this.parser.parse(line);
@@ -235,20 +231,23 @@ export class GDB extends DebugSession {
 												this.sendEvent(new Adapter.OutputEvent({category: 'stdout', output: msgFormtted}))
 											});
 										}
-										this.gotStop('breakpoint', allStopped);
+										this.sendStopped('breakpoint', allStopped);
 										break;
 									}
+									case 'watchpoint-trigger':
+										this.sendStopped('data breakpoint', allStopped);
+										break;
 
 									case 'end-stepping-range':
-										this.gotStop('step', allStopped);
+										this.sendStopped('step', allStopped);
 										break;
 
 									case 'function-finished':
-										this.gotStop('step-out', allStopped);
+										this.sendStopped('step-out', allStopped);
 										break;
 
 									case 'exited-normally':
-										// The inferior has finished execution. Take down the debugger and inform the debug session that there is nothing else to debug.
+										// The inferior has finished execution. Take down the debugger and inform the debug session that there is nothing else to debug
 										this.sendCommand('quit');
 										this.sendEvent(new Adapter.Event('terminated'))
 										break;
@@ -256,18 +255,17 @@ export class GDB extends DebugSession {
 									case 'signal-received':
 										if (!this.ignorePause) {
 											if (record.results['signal-meaning'] === 'Interrupt') {
-												this.gotStop('pause', allStopped);
+												this.sendStopped('pause', allStopped);
 											} else {
 												this.lastException = new GDBException(record);
-												this.gotStop('exception', allStopped);
+												this.sendStopped('exception', allStopped);
 											}
 										}
-										this.stopped.resolve();
+										this.stopped.fire();
 										break;
 
 									case 'solib-event':
-										// This event will only be hit if the user has explicitly specified a set of shared libraries
-										// for deferred symbol loading so we need not check for the presence of such setting
+										// This event will only be hit if the user has explicitly specified a set of shared libraries for deferred symbol loading
 										this.sharedLibraries.forEach((library: string) => {
 											if (this.loadedLibraries[library]) {
 												this.sendCommand(`sharedlibrary ${library}`);
@@ -293,7 +291,7 @@ export class GDB extends DebugSession {
 									this.sendEvent(new Adapter.ContinuedEvent({threadId: this.threadId, allThreadsContinued: threadId === 'all'}))
 									this.threadId = -1;
 									// When the inferior resumes execution, remove all tracked variables which were used to service variable reference IDs
-									this.clearVariables();
+									this.clearLocals();
 									this.stopped.reset()
 								}
 								break;
@@ -314,10 +312,9 @@ export class GDB extends DebugSession {
 									this.loadedLibraries[libLoaded] = true;
 								break;
 							}
-							default: {
+							default:
 								console.log('Unhandled notify', record);
 								break;
-							}
 						}
 						break;
 
@@ -333,73 +330,104 @@ export class GDB extends DebugSession {
 		}
 	}
 
-	private getNormalizedVariableID(id: number): number {
-		return id < SCOPE_LOCAL ? id : id - SCOPE_LOCAL;
+	private async evaluateExpression(expression: string, frameId?: number): Promise<string> {
+		const response = await this.sendCommand(`-data-evaluate-expression ${this.frameCommand(frameId)} ${quoted(expression)}`);
+		return response.results.value;
 	}
 
-	private getVariable(expression: string): DebuggerVariable | undefined {
-		for (const index in this.variables) {
-			if (this.variables[index].name === expression)
-					return this.variables[index];
+	private findLocal(expression: string): Variable | undefined {
+		for (const i in this.locals) {
+			if (this.locals[i].name === expression)
+					return this.locals[i];
 		}
 	}
 
-	private async clearVariables(): Promise<void> {
-		await Promise.all(Object.values(this.variables).map(variable => this.sendCommand(`-var-delete ${variable.debuggerName}`)));
-		this.variables = [];
+	private async clearLocals(): Promise<void> {
+		await Promise.all(Object.values(this.locals).map(v => this.sendCommand(`-var-delete ${v.debuggerName}`)));
+		this.locals = [];
 	}
 
-	private async createVariable(expression: string, frameId?: number): Promise<DebuggerVariable | undefined> {
-		const record = await this.sendCommand(`-var-create ${this.frameCommand(frameId)} - * ${quoted(expression)}`);
-		if (record.isError)
-			return;
-
-		const v = record.results as MI.CreateVariable;
-		const numberOfChildren	= +v.numchild || +v.dynamic || +v.has_more;
-		const refId							= this.variables.length + 1;
-		const variable: DebuggerVariable = {
+	private async createVariable0(expression: string, frameId?: number): Promise<Variable> {
+		const record	= await this.sendCommand(`-var-create ${this.frameCommand(frameId)} - * ${quoted(expression)}`);
+		const v				= record.results as MI.CreateVariable;
+		return {
 			name:							expression,
 			debuggerName:			v.name,
-			numberOfChildren,
-			referenceID:			numberOfChildren ? refId : 0,
+			referenceID:			+v.numchild || +v.dynamic || +v.has_more ? 1 : 0,
 			value:						v.value,
 			type: 						v.type,
 		};
-
-		this.variables[refId] = variable;
+	}
+	private addVariable(variable: Variable, list: Variable[], offset: number) {
+		if (variable.referenceID) {
+			const ref = list.length || 1;
+			variable.referenceID	= ref + offset;
+			list[ref] 						= variable;
+		}
 		return variable;
 	}
 
-	private async getVariableChildren(variableName: string) {
-		const record = await this.sendCommand(`-var-list-children --simple-values "${variableName}"`);
-		let children: DebuggerVariable[] = [];
-
-		// Safety check
-		if (parseInt(record.results.numchild)) {
-			const pending: Promise<DebuggerVariable[]>[] = [];
-
-			(record.results.children as [string, MI.ChildVariable][]).forEach(([_, child]) => {
-				if (!child.type && !child.value) {
-					// this is a pseudo child on an aggregate type such as private, public, protected, etc
-					// traverse into child and annotate its consituents with such attribute for special treating by the front-end
-					// Note we could have mulitple such pseudo-levels at a given level
-					pending.push(this.getVariableChildren(child.name));
-
-				} else {
-					children.push({
-						name:							child.exp,
-						debuggerName:			child.name,
-						numberOfChildren: +child.numchild || (+child.dynamic && child.displayhint !== 'string' ? 1 : 0), // TODO: hacky -- revisit this
-						referenceID:			-1,
-						value:						child.value || '',
-						type:							child.type,
-					});
-				}
-			});
-			(await Promise.all(pending)).forEach(variables => { children = [...children, ...variables];});
-		}
-		return children;
+	private async createVariable(expression: string, frameId?: number): Promise<Variable> {
+		return this.addVariable(await this.createVariable0(expression, frameId), this.locals, 0);
 	}
+
+	private async getFields(refId: number, list: Variable[], offset: number) {
+
+		const realChildren = async (name: string) => {
+			const record = await this.sendCommand(`-var-list-children --simple-values "${name}"`);
+			const result = record.results as MI.ListChildren;
+			let children: Variable[] = [];
+
+			// Safety check
+			if (parseInt(result.numchild)) {
+				const pending: Promise<Variable[]>[] = [];
+
+				result.children.forEach(([_, child]) => {
+					if (!child.type && !child.value) {
+						// this is a pseudo child on an aggregate type such as private, public, protected, etc
+						// traverse into child and annotate its consituents with such attribute for special treating by the front-end
+						// Note we could have mulitple such pseudo-levels at a given level
+						pending.push(realChildren(child.name));
+
+					} else {
+						children.push({
+							name:							child.exp,
+							debuggerName:			child.name,
+							referenceID:			+child.numchild || (+child.dynamic && child.displayhint !== 'string') ? 1 : 0, // TODO: hacky -- revisit this
+							value:						child.value || '',
+							type:							child.type,
+						});
+					}
+				});
+				(await Promise.all(pending)).forEach(variables => { children = [...children, ...variables];});
+			}
+			return children;
+		}
+
+		const variable = list[refId - offset];
+		if (variable) {
+			const children = await realChildren(variable.debuggerName);
+
+			if (!variable.children) {
+				variable.children = {};
+				children.forEach(child => {
+					variable.children![child.name] = child;
+					this.addVariable(child, list, offset);
+				});
+			}
+
+			const	variables	= children.map((child): DebugProtocol.Variable => ({
+				name: 							child.name,
+				value: 							child.value,
+				type: 							child.type,
+				variablesReference:	child.referenceID,
+				memoryReference:		memoryReference(child.value)
+			}));
+
+			return {variables};
+		}
+	}
+
 
 	private async getRegisterInfo() {
 		const record 		= await this.sendCommand('-data-list-register-names');
@@ -411,11 +439,11 @@ export class GDB extends DebugSession {
 		const re = /^\s*(\w+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\S+)\s+([\w+,]+)/;
 		this.capture.map(line => re.exec(line)).filter(match => match).forEach(match => {
 			this.registers[parseInt(match![2])] = {
-				name: match![1],
-				rel:		parseInt(match![3]),
-				offset: parseInt(match![4]),
-				size:	 parseInt(match![5]),
-				type:	 match![6],
+				name:		match![1],
+				rel:		+match![3],
+				offset: +match![4],
+				size:		+match![5],
+				type:		match![6],
 				groups: match![7].split(',')
 			};
 		});
@@ -434,7 +462,7 @@ export class GDB extends DebugSession {
 			});
 		});
 
-		// Build hierarchy by finding subsets
+		// Build hierarchy by finding subsets and roots
 		for (const g1 in groups) {
 			let hasParent = false;
 			for (const g2 in groups) {
@@ -462,25 +490,20 @@ export class GDB extends DebugSession {
 			this.registerGroups.push(groups[roots[0]]);
 		}
 
-		// remove children's registers
+		// remove children's registers and assign offsets
 		for (const i in groups) {
 			const g = groups[i];
-			if (g.offset === undefined) {
-				g.offset = this.registerGroups.length;
-				this.registerGroups.push(g);
-			}
+			if (g.offset === undefined)
+				g.offset = this.registerGroups.push(g) - 1;
 
 			for (const c of Object.values(g.children))
 				g.includes &= ~c.includes;
 		}
 	}
 
-	private async continue(threadID?: number): Promise<void> {
+	private continue() {
 		this.ignorePause = false;
-		if (threadID)
-			await this.sendCommand(`-exec-continue --thread ${threadID}`);
-		else
-			await this.sendCommand('-exec-continue');
+		return this.sendCommand('-exec-continue');
 	}
 
 	private async pause(): Promise<boolean> {
@@ -500,13 +523,13 @@ export class GDB extends DebugSession {
 		if (vars) {
 			await Promise.all(vars.map(async v => {
 				const varName = v.replace('{', '').replace('}', '');
-				const vObj = await this.sendCommand(`-var-create - * "${varName}"`);
-				const vRes = await this.sendCommand(`-var-evaluate-expression ${vObj.results['name']}`);
+				const vRes = await this.sendCommand(`-var-evaluate-expression ${quoted(varName)}`);
 				msg = msg.replace(v, vRes.results['value']);
 			}));
 		}
 		return msg;
 	}
+
 	private async clearBreakPoints(breakpoints: Record<string, number>) {
 		await Promise.all(Object.values(breakpoints).map((num: number) => this.sendCommand(`-break-delete ${num}`)));
 		breakpoints = {};
@@ -519,9 +542,7 @@ export class GDB extends DebugSession {
 	protected async launchRequest(args: LaunchRequestArguments) {
 		super.launchRequest(args);
 
-		const args2 = [...args.debuggerArgs || [], '--interpreter=mi', '--tty=`tty`', '-q'];
-
-		const gdb = spawn(args.debugger || 'gdb', args2, {
+		const gdb = spawn(args.debugger || 'gdb', [...args.debuggerArgs || [], '--interpreter=mi', '--tty=`tty`', '-q'], {
 			stdio: ['pipe', 'pipe', 'pipe'],
 			cwd: args.cwd,
 			env: args.env
@@ -532,7 +553,7 @@ export class GDB extends DebugSession {
 		if (args.startupCmds?.length)
 			await Promise.all(args.startupCmds.map(cmd => this.sendCommand(cmd)));
 
-		this.ready.resolve();
+		this.ready.fire();
 		await Promise.all(this.startupPromises);
 	}
 
@@ -553,7 +574,7 @@ export class GDB extends DebugSession {
 
 		} else {
 			const result: MI.OutputRecord = await this.sendCommand('-gdb-show auto-solib-add');
-			if (result.results['value'] !== 'off')
+			if (result.results.value !== 'off')
 				postLoadCommands = [
 					'sharedlibrary',
 					...postLoadCommands
@@ -571,8 +592,9 @@ export class GDB extends DebugSession {
 
 	protected async stackTraceRequest(args: DebugProtocol.StackTraceArguments) {
 		const record = await this.sendCommand(`-stack-list-frames --thread ${args.threadId}`);
+		const result = record.results as MI.ListFrames;
 
-		const stack = (record.results['stack'] as [string, MI.Frame][]).map(([_, frame]): DebugProtocol.StackFrame =>	{
+		const stack = result.stack.map(([_, frame]): DebugProtocol.StackFrame =>	{
 			return {
 				id:		 args.threadId + +frame.level,
 				name:	 frame.func,
@@ -594,28 +616,28 @@ export class GDB extends DebugSession {
 
 	protected async completionsRequest(args: DebugProtocol.CompletionsArguments) {
 		const record = await this.sendCommand(`-complete "${args.text}"`);
-		return {targets: record.results['matches'].map((match: string) => ({label: match, start: 0}))};
+		return {targets: record.results.matches.map((match: string) => ({label: match, start: 0}))};
 	}
 
 	protected async disassembleRequest(args: DebugProtocol.DisassembleArguments) {
 		const memoryAddress = adjustMemory(args.memoryReference, args.offset);
 		const record = await this.sendCommand(`-data-disassemble -s ${memoryAddress} -e ${adjustMemory(memoryAddress, args.instructionCount)} -- 0`);
-		const insts = record.results['asm_insns'] as any[];
+		const result = record.results as MI.Disassemble;
 
-		const instructions = insts.map(inst => ({
-			address: inst.address,
-			instruction: inst.inst,
+		const instructions = result.asm_insns.map(inst => ({
+			address:			inst.address,
+			instruction:	inst.inst,
 			...(!+inst.offset && {symbol: inst['func-name']})
 		}));
 		return {instructions};
 	}
 
 	protected async readMemoryRequest(args: DebugProtocol.ReadMemoryArguments) {
-		const address = adjustMemory(args.memoryReference, args.offset);
-		const record = await this.sendCommand(`-data-read-memory-bytes ${address} ${args.count}`);
-		const memory = record.results['memory'] as MI.Memory[];
+		const address	= adjustMemory(args.memoryReference, args.offset);
+		const record	= await this.sendCommand(`-data-read-memory-bytes ${address} ${args.count}`);
+		const memory	= record.results['memory'] as MI.Memory[];
+		const data 		= memory && memory.length > 0 ? Buffer.from(memory[0].contents, 'hex').toString('base64'): '';
 
-		const data = memory && memory.length > 0 ? Buffer.from(memory[0].contents, 'hex').toString('base64'): '';
 		return {
 			address,
 			data,
@@ -625,13 +647,14 @@ export class GDB extends DebugSession {
 
 	protected async writeMemoryRequest(args: DebugProtocol.WriteMemoryArguments) {
 		const address = adjustMemory(args.memoryReference, args.offset);
-		const data = Buffer.from(args.data, 'base64').toString('hex');
+		const data		= Buffer.from(args.data, 'base64').toString('hex');
 		await this.sendCommand(`-data-write-memory-bytes ${address} ${data}`);
 	}
 
 	protected async threadsRequest() {
-		const record = await this.sendCommand('-thread-info');
-		const threads = record.results['threads'].map((thread: any) => ({id: parseInt(thread.id), name: thread.name}));
+		const record	= await this.sendCommand('-thread-info');
+		const result	= record.results as MI.ThreadInfo;
+		const threads = result.threads.map(thread => ({id: +thread.id, name: thread.name ?? thread.id}));
 		return {threads};
 	}
 
@@ -648,16 +671,19 @@ export class GDB extends DebugSession {
 	}
 
 	protected async stepBackRequest(args: DebugProtocol.StepBackArguments) {
-			await this.sendCommand(`-exec-next${granularity(args.granularity)} --reverse --thread ${args.threadId}`);
+			await this.sendCommand(`-exec-step${granularity(args.granularity)} --reverse --thread ${args.threadId}`);
 	}
 
 	protected async continueRequest(args: DebugProtocol.ContinueArguments) {
-		await this.continue(args.threadId);
+		this.ignorePause = false;
+		await this.sendCommand(`-exec-continue --thread ${args.threadId}`);
 		return {allThreadsContinued: true};
 	}
 
-	protected async reverseContinueRequest(_args: DebugProtocol.ReverseContinueArguments) {
-		await this.sendCommand('rc');
+	protected async reverseContinueRequest(args: DebugProtocol.ReverseContinueArguments) {
+		this.ignorePause = false;
+		await this.sendCommand(`-exec-continue --reverse --thread ${args.threadId}`);
+		return {allThreadsContinued: true};
 	}
 
 	protected async pauseRequest(args: DebugProtocol.PauseArguments) {
@@ -665,22 +691,22 @@ export class GDB extends DebugSession {
 	}
 
 	protected async setBreakpointsRequest(args: DebugProtocol.SetBreakpointsArguments) {
-		const fileName 		= args.source.path || '';
+		const filename 		= args.source.path || '';
 		const breakpoints	= args.breakpoints || [];
-		const normalizedFileName = this.getNormalizedFileName(fileName);
+		const normalizedFileName = this.getNormalizedFileName(filename);
 
 		const promise = this.ready.then(async () => {
 			// There are instances where breakpoints won't properly bind to source locations despite enabling async mode on GDB.
 			// To ensure we always bind to source, explicitly pause the debugger, but do not react to the signal from the UI side so as to not get the UI in an odd state
 			const wasPaused = await this.pause();
 
-			if (this.breakpoints[fileName]) {
-				await Promise.all(this.breakpoints[fileName].map(breakpoint => {
+			if (this.breakpoints[filename]) {
+				await Promise.all(this.breakpoints[filename].map(breakpoint => {
 					if (this.logBreakpoints[breakpoint])
 						delete this.logBreakpoints[breakpoint];
 					return this.sendCommand(`-break-delete ${breakpoint}`);
 				}));
-				delete this.breakpoints.fileName;
+				delete this.breakpoints[filename];
 			}
 
 			const confirmed:	DebugProtocol.Breakpoint[] = [];
@@ -689,13 +715,13 @@ export class GDB extends DebugSession {
 			try {
 				await Promise.all(breakpoints.map(async b => {
 					const record	= await this.sendCommand(`-break-insert ${breakpointConditions(b.condition, b.hitCondition)} -f ${normalizedFileName}:${b.line}`);
-					const bkpt		= record.results['bkpt'];
+					const bkpt		= record.results.bkpt as MI.Breakpoint;
 					if (bkpt) {
-						confirmed.push({verified: !bkpt.pending, line:bkpt.line});
-						ids.push(parseInt(bkpt.number));
+						confirmed.push({verified: !bkpt.pending, line: bkpt.line ? +bkpt.line : undefined});
+						ids.push(+bkpt.number);
 
 						if (b.logMessage)
-							this.logBreakpoints[bkpt.number] = b.logMessage;
+							this.logBreakpoints[+bkpt.number] = b.logMessage;
 
 					}
 				}));
@@ -704,7 +730,7 @@ export class GDB extends DebugSession {
 			}
 
 			// Only return breakpoints GDB has actually bound to a source; others will be marked verified as the debugger binds them later on
-			this.breakpoints[fileName] = ids;
+			this.breakpoints[filename] = ids;
 
 			if (!wasPaused && this.inferiorRunning)
 				this.continue();
@@ -720,8 +746,8 @@ export class GDB extends DebugSession {
 		await this.clearBreakPoints(this.exceptionBreakpoints);
 
 		await Promise.all(args.filters.map(async type => {
-			const result = await this.sendCommand(`-catch-${type}`);
-			this.exceptionBreakpoints[type] = result.results['bkpt'].number;
+			const record = await this.sendCommand(`-catch-${type}`);
+			this.exceptionBreakpoints[type] = record.results.bkpt.number;
 		}));
 	}
 
@@ -729,30 +755,30 @@ export class GDB extends DebugSession {
 		await this.clearBreakPoints(this.functionBreakpoints);
 
 		const breakpoints = await Promise.all(args.breakpoints.map(async b => {
-			const result	= await this.sendCommand(`-break-insert ${breakpointConditions(b.condition, b.hitCondition)} ${b.name}`);
-			const bkpt		= result.results['bkpt'];
-			this.functionBreakpoints[b.name] = bkpt.number;
-			return {verified:!bkpt.pending, line: bkpt.line};
+			const record	= await this.sendCommand(`-break-insert ${breakpointConditions(b.condition, b.hitCondition)} ${b.name}`);
+			const bkpt		= record.results.bkpt as MI.Breakpoint;
+			this.functionBreakpoints[b.name] = +bkpt.number;
+			return {verified:!bkpt.pending, line: bkpt.line ? +bkpt.line : undefined};
 		}));
 		return {breakpoints};
 	}
 
 	protected async dataBreakpointInfoRequest(args: DebugProtocol.DataBreakpointInfoArguments) {
-		let dataId = args.name;
+		const refId		= args.variablesReference;
+		let		dataId	= args.name;
 
-		if (args.variablesReference) {
-			const variable = this.variables[this.getNormalizedVariableID(args.variablesReference)];
-			if (variable?.debuggerName) {
-				const record = await this.sendCommand(`-var-info-path-expression "${variable.debuggerName}.${args.name}"`);
-				dataId = record.results['path_expr'] ?? '';
+		if (refId && refId !== SCOPE.GLOBALS) {
+			const variable = this.locals[refId];
+			if (variable && variable.children) {
+				dataId = variable.children[dataId].debuggerName;
 			}
 		}
 
 		return {
 			dataId,
-			description: args.name,
-			accessTypes: ['read', 'write', 'readWrite'] as DebugProtocol.DataBreakpointAccessType[],
-			canPersist: false
+			description:	args.name,
+			accessTypes:	['read', 'write', 'readWrite'] as DebugProtocol.DataBreakpointAccessType[],
+			canPersist:		false
 		};
 	}
 
@@ -760,10 +786,10 @@ export class GDB extends DebugSession {
 		await this.clearBreakPoints(this.dataBreakpoints);
 
 		const breakpoints = await Promise.all(args.breakpoints.map(async b => {
-			const result	= await this.sendCommand(`-break-watch ${b.accessType === 'read' ? '-r' : b.accessType === 'readWrite' ? '-a' : ''} ${breakpointConditions(b.condition, b.hitCondition)} ${b.dataId}`);
-			const bkpt		= result.results.wpt;
+			const record	= await this.sendCommand(`-break-watch ${b.accessType === 'read' ? '-r' : b.accessType === 'readWrite' ? '-a' : ''} ${breakpointConditions(b.condition, b.hitCondition)} ${b.dataId}`);
+			const bkpt		= record.results.wpt;
 			this.dataBreakpoints[b.dataId] = bkpt.number;
-			return {verified:!bkpt.pending};
+			return {verified: !bkpt.pending};
 		}));
 		return {breakpoints};
 	}
@@ -772,10 +798,10 @@ export class GDB extends DebugSession {
 		await this.clearBreakPoints(this.instsBreakpoints);
 		const breakpoints = await Promise.all(args.breakpoints.map(async b => {
 			const	name		= adjustMemory(b.instructionReference, b.offset);
-			const result	= await this.sendCommand(`-break-insert ${breakpointConditions(b.condition, b.hitCondition)} *${name}`);
-			const bkpt		= result.results['bkpt'];
-			this.instsBreakpoints[name] = bkpt.number;
-			return {verified:!bkpt.pending, line: bkpt.line};
+			const record	= await this.sendCommand(`-break-insert ${breakpointConditions(b.condition, b.hitCondition)} *${name}`);
+			const bkpt		= record.results.bkpt as MI.Breakpoint;
+			this.instsBreakpoints[name] = +bkpt.number;
+			return {verified:!bkpt.pending, line: bkpt.line ? +bkpt.line : undefined};
 		}));
 		return {breakpoints};
 	}
@@ -784,17 +810,13 @@ export class GDB extends DebugSession {
 	protected async breakpointLocationsRequest(args: DebugProtocol.BreakpointLocationsArguments) {
     const record = await this.sendCommand(`-symbol-list-lines ${args.source.path}`);
 
-		const filter = args.endLine
-			? (line: MI.Line) => +line.line >= args.line && +line.line <= args.endLine!
-			: (line: MI.Line) => +line.line === args.line;
-
     if (record.results.lines) {
-			const breakpoints: DebugProtocol.BreakpointLocation[] = (record.results.lines as MI.Line[])
-				.filter(filter)
-				.map(line => ({
-					line:			+line.line,
-				}));
-				return { breakpoints };
+			const filter = args.endLine
+				? (line: MI.Line) => +line.line >= args.line && +line.line <= args.endLine!
+				: (line: MI.Line) => +line.line === args.line;
+
+			const breakpoints: DebugProtocol.BreakpointLocation[] = (record.results.lines as MI.Line[]).filter(filter).map(line => ({line: +line.line}));
+			return { breakpoints };
 		}
 	}
 
@@ -819,80 +841,126 @@ export class GDB extends DebugSession {
 	}
 
 	protected async gotoRequest(args: DebugProtocol.GotoArguments) {
-		await this.sendCommand(`-data-evaluate-expression "$pc=0x${args.targetId.toString(16)}"`);
-		setTimeout(() => this.gotStop('goto'), 0);
+		await this.evaluateExpression(`$pc=0x${args.targetId.toString(16)}`);
+		setTimeout(() => this.sendStopped('goto'), 0);
 	}
 
 	protected async variablesRequest(args: DebugProtocol.VariablesArguments) {
-		let children: DebuggerVariable[] = [];
+		const refId = args.variablesReference;
 
-		if (args.variablesReference < SCOPE_LOCAL) {
-			// Fetch children variables for an existing variable
-			const variable = this.variables[args.variablesReference];
-			children = (variable && await this.getVariableChildren(variable.debuggerName)) || [];
+		if (refId > SCOPE.GLOBALS)
+			return await this.getFields(refId, this.globals, SCOPE.GLOBALS + 1);
 
-			children.forEach(child => {
-				child.referenceID = this.variables.length;
-				this.variables.push(child);
-			});
+		if (refId === SCOPE.GLOBALS) {
+			if (this.globals.length === 0) {
+				const record	= await this.sendCommand(`-symbol-info-variables`);
+				const symbols = record.results.symbols as MI.Symbols;
 
-		} else if (args.variablesReference < SCOPE_REGISTERS) {
-			// Fetch root level locals
-			await this.clearVariables();
-			const frameId = args.variablesReference - SCOPE_LOCAL;
-			const record	= await this.sendCommand(`-stack-list-variables ${this.frameCommand(frameId)} --no-frame-filters --simple-values`);
+				this.statics	= {};
+				for (const file of symbols.debug) {
+					this.statics[file.fullname] = file.symbols.filter(sym => sym.description.startsWith('static ')).map(sym => sym.name);
 
-			await Promise.all(record.results['variables'].map((variable: any) => this.createVariable(variable.name, frameId)));
-			children = this.variables;
+				this.globals	= symbols.debug.map(file => file.symbols
+					.filter(sym => !sym.description.startsWith('static '))
+					.map((sym): Variable => ({
+						name:					sym.name,
+						debuggerName: sym.name,
+						value:				'',
+						type:					sym.type,
+						referenceID:	0,
+					}))
+				).flat().sort((a, b) => a.name < b.name ? -1 : 1);
+			}
 
-		} else {
-			// Fetch registers
-			const group = this.registerGroups[args.variablesReference - SCOPE_REGISTERS];
-			const record = await this.sendCommand(`-data-list-register-values N ${bitlist(group.includes).map(i => i.toString()).join(' ')}`);
-
-			children = [
-				...Object.keys(group.children).map(i => ({
-					name: 				i,
-					debuggerName: i,
-					value: '',
-					type: '',
-					numberOfChildren: 1,
-					referenceID: SCOPE_REGISTERS + group.children[i].offset!,
-				})),
-				...record.results['register-values']
-				//.filter((reg: any) => group.includes & (1n << BigInt(reg.number)))
-				.map((reg: any) => ({
-					name: this.registers[reg.number].name,
-					value: reg.value
-				}))
-			];
+			const start		= args.start ?? 0;
+			const globals	= args.count ? this.globals.slice(start, args.count) : this.globals.slice(start);
+			const variables = await Promise.all(globals.map(async (g, i): Promise<DebugProtocol.Variable> => {
+				const value = await this.evaluateExpression(g.name);
+				if (!g.referenceID && isCompositeValue(value)) {
+					g							=	await this.createVariable0(g.name);
+					g.referenceID	= i + start + SCOPE.GLOBALS + 1;
+					this.globals[i + start] = g;
+				}
+				return {
+					name:					g.name,
+					value,
+					type:					g.type,
+					variablesReference:	g.referenceID,
+					memoryReference:		memoryReference(value)
+				};
+			}));
+			return {variables};
 		}
 
-		const	variables	= children.map((v): DebugProtocol.Variable => ({
-				name: 	v.name,
-				value: 	v.value,
-				type: 	v.type,
-				variablesReference:	v.numberOfChildren ? v.referenceID : 0,
-				memoryReference:		memoryReference(v.value)
-		}));
-		return {variables};
+		if (refId >= SCOPE.REGISTERS) {
+			// Fetch registers
+			const group		= this.registerGroups[refId - SCOPE.REGISTERS];
+			const record	= await this.sendCommand(`-data-list-register-values r ${bitlist(group.includes).map(i => i.toString()).join(' ')}`);
+
+			const variables = [
+				...Object.keys(group.children).map(i => ({
+					name: 							i,
+					value: 							'',
+					variablesReference: SCOPE.REGISTERS + group.children[i].offset!,
+				})),
+				...record.results['register-values'].map((reg: MI.Register) => ({
+					name:								this.registers[+reg.number].name,
+					value:							reg.value,
+					variablesReference:	0,
+					memoryReference:		memoryReference(reg.value)
+				}))
+			];
+			return {variables};
+		}
+
+		if (refId >= SCOPE.LOCAL) {
+			const frameId = refId - SCOPE.LOCAL;
+			const record	= await this.sendCommand(`-stack-list-variables ${this.frameCommand(frameId)} --no-frame-filters --simple-values`);
+			const result	= record.results as MI.StackVariables;
+
+			const	variables	= await Promise.all(result.variables.map(async (child): Promise<DebugProtocol.Variable> => {
+				let refId = 0;
+				if (!child.value) {
+					const variable = this.findLocal(child.name) || await this.createVariable(child.name, frameId);
+					refId = variable.referenceID;
+				}
+				return {
+					name: 							child.name,
+					value: 							child.value ?? '',
+					type: 							child.type,
+					variablesReference:	refId,
+					memoryReference:		child.value ? memoryReference(child.value) : undefined
+				};
+
+			}));
+			return {variables};
+		}
+
+		return await this.getFields(refId, this.locals, 0);
 	}
 
 	protected async setVariableRequest(args: DebugProtocol.SetVariableArguments) {
-		if (args.variablesReference >= SCOPE_REGISTERS) {
-			const record = await this.sendCommand(`-data-evaluate-expression "$${args.name}=${args.value}"`);
+		const refId = args.variablesReference;
+		const name = args.name;
+
+		if (refId >= SCOPE.REGISTERS) {
+			const value = await this.evaluateExpression(`$${name}=${args.value}`);
 			return {
-				value: record.results.value,
+				value,
 			};
 		}
-		const variable = this.variables[this.getNormalizedVariableID(args.variablesReference)];
 
-		// This should always hit in the map, but if it doesn't, do not allow the updating of this variable
-		if (variable) {
-			let accessName = variable.debuggerName;
-			if (args.name !== variable.name)
-				accessName = `${accessName}.${args.name}`;
-			const record = await this.sendCommand(`-var-assign ${accessName} ${args.value}`);
+		if (refId >= SCOPE.LOCAL) {
+			const value = await this.evaluateExpression(`${name}=${args.value}`, refId - SCOPE.LOCAL);
+			return {
+				value,
+			};
+		}
+
+		const variable = this.locals[refId];
+		if (variable && variable.children) {
+			const child = variable.children[name];
+			const record = await this.sendCommand(`-var-assign ${child.debuggerName} ${quoted(args.value)}`);
 			return {
 				value: record.results.value,
 			};
@@ -900,8 +968,7 @@ export class GDB extends DebugSession {
 	}
 
 	protected async setExpressionRequest(args: DebugProtocol.SetExpressionArguments) {
-		const record	= await this.sendCommand(`-data-evaluate-expression ${this.frameCommand(args.frameId)} "${args.expression}=${args.value}"`);
-		const value = record.results['value'];
+		const value	= await this.evaluateExpression(`${args.expression}=${args.value}`, args.frameId);
 		return {
 			value,
 			memoryReference:	memoryReference(value)
@@ -917,7 +984,7 @@ export class GDB extends DebugSession {
 			case 'watch':
 			case 'hover': {
 				// If variable is already being tracked, reuse "cached" result
-				const variable = this.getVariable(args.expression) || await this.createVariable(args.expression, args.frameId)
+				const variable = this.findLocal(args.expression) || await this.createVariable(args.expression, args.frameId)
 
 				if (!variable)
 					throw {message: `Variable '${args.expression}' not found`};
@@ -935,9 +1002,9 @@ export class GDB extends DebugSession {
 		const record = await this.sendCommand(`-file-list-shared-libraries`);
     if (record.results['shared-libraries']) {
 			const modules = ((record.results['shared-libraries']) as MI.Module[]).map((module: MI.Module): DebugProtocol.Module => ({
-				id:			module.id,
-				name:		module['host-name'],
-				path:		module['target-name'],
+				id:							module.id,
+				name:						module['host-name'],
+				path:						module['target-name'],
 				symbolStatus:		+module['symbols-loaded'] ? 'loaded' : 'not loaded',
 				addressRange:		module.ranges[0].from
 			}));

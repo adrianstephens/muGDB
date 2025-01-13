@@ -4,8 +4,16 @@ import {DebugProtocol} from '@vscode/debugprotocol';
 import * as Adapter from './DebugAdapter';
 import * as path from 'path';
 
+export const SCOPE = {
+	LOCAL:	    100000,
+	REGISTERS:	200000,
+	GLOBALS:	  300000,
+} as const;
+/*
 export const SCOPE_LOCAL = 100000;
 export const SCOPE_REGISTERS = 200000;
+export const SCOPE_GLOBALS = 300000;
+*/
 
 export class DebuggerException {
 	constructor(public name: string, public description: string) {}
@@ -198,13 +206,19 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 			scopes: [
 				{
 					name: 'Locals',
-					variablesReference: SCOPE_LOCAL + args.frameId,
+					variablesReference: SCOPE.LOCAL + args.frameId,
 					expensive: false,
 					presentationHint: 'locals',
 				},
 				{
+					name: 'Globals',
+					variablesReference: SCOPE.GLOBALS,
+					expensive: true,
+					presentationHint: 'globals',
+				},
+				{
 					name: 'Registers',
-					variablesReference: SCOPE_REGISTERS,
+					variablesReference: SCOPE.REGISTERS,
 					expensive: true,
 					presentationHint: 'registers',
 				},

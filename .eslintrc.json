@@ -13,20 +13,17 @@
 		"prefer-const": "error",
 		"eol-last": "error",
 		"prefer-arrow-callback": "error",
-		"no-trailing-spaces": "error",
 		"no-prototype-builtins": "off",
-		"no-restricted-properties": [
-			"error",
-			{
-				"object": "describe",
-				"property": "only"
-			},
-			{
-				"object": "it",
-				"property": "only"
-			}
-		]
-	},
+		"require-atomic-updates": "off",
+		"no-control-regex": "off",
+		"node/no-missing-import": "off",
+		"node/no-unsupported-features/es-syntax": "off",
+		"node/no-empty-function": "off",
+		"node/shebang": "off",
+		"node/no-unpublished-import": ["error", {
+				"allowModules": ["@vscode/debugprotocol"]
+		}]
+},
 	"overrides": [
 		{
 			"files": ["**/*.ts", "**/*.tsx"],
@@ -35,17 +32,6 @@
 				"plugin:@typescript-eslint/recommended"
 			],
 			"rules": {
-				"node/no-unsupported-features/es-syntax": "off",
-				"node/no-missing-import": "off",
-				"node/no-empty-function": "off",
-				"node/no-missing-require": "off",
-				"node/shebang": "off",
-				"node/no-unpublished-import": ["error", {
-						"allowModules": ["@vscode/debugprotocol"]
-				}],
-				"no-dupe-class-members": "off",
-				"require-atomic-updates": "off",
-				"no-control-regex": "off",
 				"@typescript-eslint/no-empty-function": "off",
 				"@typescript-eslint/no-non-null-assertion": "off",
 				"@typescript-eslint/no-explicit-any": "off",
