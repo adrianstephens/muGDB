@@ -113,10 +113,8 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 	protected terminateCommands: string[] = [];
 	protected useAbsoluteFilePathsForBreakpoints = false;
 	protected sharedLibraries: string[] = [];
-	protected threadId = -1;
 	protected	lastException: DebuggerException | null = null;
 	private 	toServer?: {write(command: string): void};
-	protected inferiorRunning = false;
 
 	constructor(private readonly outputChannel: vscode.OutputChannel, _configuration: vscode.DebugConfiguration) {
 		super();
@@ -151,7 +149,9 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 			});
 		});
 
-		process.stderr.on('data', data => console.log(data.toString()));
+		process.stderr.on('data', data => 
+			console.log(data.toString())
+		);
 	}
 
   public log(level: LoggingLevelValue, text: string): void {
