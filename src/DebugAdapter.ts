@@ -126,7 +126,7 @@ export class DebugAdapter implements vscode.DebugAdapter {
 						request_seq: request.seq,
 						command: request.command,
 						success: false,
-						message: err.message || (err.format && format(err.format, err.variables ?? {})) || 'unknown error'
+						message: typeof err === 'string' ? err : err.message || (err.format && format(err.format, err.variables ?? {})) || 'unknown error'
 					})
 				});
 
@@ -173,7 +173,7 @@ export class DebugAdapter implements vscode.DebugAdapter {
 			case 'variables':	                return this.variablesRequest(request.arguments);
 			case 'setVariable':	              return this.setVariableRequest(request.arguments);
 			case 'source':	                  return this.sourceRequest(request.arguments);
-			case 'threads':	                  return this.threadsRequest(request.arguments);
+			case 'threads':	                  return this.threadsRequest();
 			case 'terminateThreads':	        return this.terminateThreadsRequest(request.arguments);
 			case 'modules':	                  return this.modulesRequest(request.arguments);
 			case 'loadedSources':	            return this.loadedSourcesRequest(request.arguments);
@@ -268,7 +268,7 @@ export class DebugAdapter implements vscode.DebugAdapter {
 	protected async variablesRequest	                (_args: DebugProtocol.VariablesArguments):	                ReturnBody<DebugProtocol.VariablesResponse>	                { return; }
 	protected async setVariableRequest	              (_args: DebugProtocol.SetVariableArguments):	              ReturnBody<DebugProtocol.SetVariableResponse>	              { return; }
 	protected async sourceRequest	                    (_args: DebugProtocol.SourceArguments):	                    ReturnBody<DebugProtocol.SourceResponse>	                  { return; }
-	protected async threadsRequest	                  (_args: any):	                                              ReturnBody<DebugProtocol.ThreadsResponse>	                  { return; }
+	protected async threadsRequest	                  ():						                                              ReturnBody<DebugProtocol.ThreadsResponse>	                  { return; }
 	protected async terminateThreadsRequest	          (_args: DebugProtocol.TerminateThreadsArguments):	          ReturnBody<DebugProtocol.TerminateThreadsResponse>	        { return; }
 	protected async modulesRequest	                  (_args: DebugProtocol.ModulesArguments):	                  ReturnBody<DebugProtocol.ModulesResponse>	                  { return; }
 	protected async loadedSourcesRequest	            (_args: DebugProtocol.LoadedSourcesArguments):	            ReturnBody<DebugProtocol.LoadedSourcesResponse>	            { return; }
