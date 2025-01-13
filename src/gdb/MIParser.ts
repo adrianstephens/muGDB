@@ -41,7 +41,7 @@ export class AsyncRecord extends OutputRecord {
 export enum StreamRecordType {
 	CONSOLE = '~',
 	TARGET	= '@',
-	LOG		 = '&'
+	LOG			= '&'
 }
 
 export class StreamRecord extends OutputRecord {
@@ -201,28 +201,30 @@ export interface BreakpointLocation {
 
 export interface Breakpoint extends BreakpointLocation {
 	type:      						string; //	The type of the breakpoint. For ordinary breakpoints this will be ‘breakpoint’, but many values are possible.
-	'catch-type':     		string; //	If the type of the breakpoint is ‘catchpoint’, then this indicates the exact type of catchpoint.
+	'catch-type'?:     		string; //	If the type of the breakpoint is ‘catchpoint’, then this indicates the exact type of catchpoint.
 	disp:      						string; //	This is the breakpoint disposition—either ‘del’, meaning that the breakpoint will be deleted at the next stop, or ‘keep’, meaning that the breakpoint will not be deleted.
-	at:        						string; //	If the source file is not known, this field may be provided. If provided, this holds the address of the breakpoint, possibly followed by a symbol name.
-	pending:   						string; //	If this breakpoint is pending, this field is present and holds the text used to set the breakpoint, as entered by the user.
-	'evaluated-by': 			string; //	Where this breakpoint’s condition is evaluated, either ‘host’ or ‘target’.
-	thread:    						string; //	If this is a thread-specific breakpoint, then this identifies the thread in which the breakpoint can trigger.
-	inferior:  						string; //	If this is an inferior-specific breakpoint, this this identifies the inferior in which the breakpoint can trigger.
-	task:      						string; //	If this breakpoint is restricted to a particular Ada task, then this field will hold the task identifier.
-	cond:      						string; //	If the breakpoint is conditional, this is the condition expression.
-	ignore:    						string; //	The ignore count of the breakpoint.
-	enable:    						string; //	The enable count of the breakpoint.
-	'traceframe-usage':		string; //	FIXME.
-	'static-tracepoint-marker-string-id': string; //	For a static tracepoint, the name of the static tracepoint marker.
-	mask:      						string; //	For a masked watchpoint, this is the mask.
-	pass:      						string; //	A tracepoint’s pass count.
+	at?:       						string; //	If the source file is not known, this field may be provided. If provided, this holds the address of the breakpoint, possibly followed by a symbol name.
+	pending?:  						string; //	If this breakpoint is pending, this field is present and holds the text used to set the breakpoint, as entered by the user.
+	'evaluated-by'?: 			string; //	Where this breakpoint’s condition is evaluated, either ‘host’ or ‘target’.
+	thread?:   						string; //	If this is a thread-specific breakpoint, then this identifies the thread in which the breakpoint can trigger.
+	inferior?: 						string; //	If this is an inferior-specific breakpoint, this this identifies the inferior in which the breakpoint can trigger.
+	task?:     						string; //	If this breakpoint is restricted to a particular Ada task, then this field will hold the task identifier.
+	cond?:     						string; //	If the breakpoint is conditional, this is the condition expression.
+	ignore?:   						string; //	The ignore count of the breakpoint.
+	enable?:   						string; //	The enable count of the breakpoint.
+	mask?:     						string; //	For a masked watchpoint, this is the mask.
 	'original-location':  string; //	The location of the breakpoint as originally specified by the user. This field is optional.
 	times:     						string; //	The number of times the breakpoint has been hit.
-	installed: 						string; //	This field is only given for tracepoints. This is either ‘y’, meaning that the tracepoint is installed, or ‘n’, meaning that it is not.
-	what:      						string; //	Some extra data, the exact contents of which are type-dependent.
+	what?:     						string; //	Some extra data, the exact contents of which are type-dependent.
 	locations?: BreakpointLocation[]; //	This field is present if the breakpoint has multiple locations. It is also exceptionally present if the breakpoint is enabled and has a single, disabled location.
 }
 
+export interface Tracepoint extends Breakpoint {
+	'traceframe-usage'?:	string; //	FIXME.
+	'static-tracepoint-marker-string-id'?: string; //	For a static tracepoint, the name of the static tracepoint marker.
+	pass?:     						string; //	A tracepoint’s pass count.
+	installed?:						string; //	This field is only given for tracepoints. This is either ‘y’, meaning that the tracepoint is installed, or ‘n’, meaning that it is not.
+}
 
 //MIParser
 

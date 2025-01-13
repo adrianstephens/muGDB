@@ -110,6 +110,19 @@ function isCompositeValue(value: string): boolean {
 	return !!/(^0x)|{|<|\[|struct|class/.exec(value);
 }
 
+export async function async_replace(value: string, re: RegExp, process: (match: RegExpExecArray)=>Promise<string>): Promise<string> {
+	let m;
+	let i = 0;
+	const combine = async (m: RegExpExecArray) => value.substring(i, m!.index) + await process(m!);
+
+	const promises: Promise<string>[] = [];
+	while ((m = re.exec(value))) {
+		promises.push(combine(m));
+		i = re.lastIndex;
+	}
+	return (await Promise.all(promises)).join('') + value.substring(i);
+}
+
 export class GDB extends DebugSession {
 	protected debuggerPath = 'gdb';
 	private		parser = new MI.MIParser();
@@ -134,9 +147,13 @@ export class GDB extends DebugSession {
 	private globals:	Variable[] = [];
 	private statics:	Record<string, string[]> = {};
 
+	private frames:				{thread: number, frame: number}[] = [];
 	private registers:			Register[] 			= [];
 	private registerGroups:	RegisterGroup[]	= [];
 
+	private threadId = -1;
+	private inferiorStarted = false;
+	private inferiorRunning = false;
 	private ignorePause		= false;
 	private stopped 			= new Deferred(true);
 	private ready 				= new Deferred(false);
@@ -146,34 +163,40 @@ export class GDB extends DebugSession {
 	private capture?: 	string[];
 
 	private frameCommand(frameId?: number) {
-		return frameId ? `--frame ${frameId - this.threadId} --thread ${this.threadId}` : ''
+		if (frameId === undefined)
+			return '';
+
+		const frame = this.frames[frameId];
+		if (!frame)
+			throw new Error(`No frame ${frameId}`);
+		return `--frame ${frame.frame} --thread ${frame.thread}`
 	}
 
 	public sendCommand(command: string): Promise<MI.OutputRecord> {
 		return new Promise((resolve, reject) => {
 			++this.token;
 			this.handlers[this.token] = record => {
-				if (record.isError)
+				if (record.isError) {
+					console.log(`${record.results.msg} : ${command}`);
 					reject(record.results.msg);
-				else
+				} else {
 					resolve(record);
+				}
 			};
 			this.sendServer(this.token + command);
 		});
-	}
-
-	public async sendUserCommand(command: string, frameId?: number): Promise<void> {
-		const interpreter = command.startsWith('-') ? 'mi' : 'console';
-		await this.sendCommand(`-interpreter-exec ${this.frameCommand(frameId)} ${interpreter} ${quoted(command)}`);
 	}
 
 	protected async sendCommands(commands: string[]): Promise<void> {
 		await Promise.all(commands.map(cmd => this.sendCommand(cmd)));
 	}
 
-	private sendStopped(reason: string, allThreadsStopped?: boolean): void {
-		this.sendEvent(new Adapter.StoppedEvent({reason, threadId: this.threadId, allThreadsStopped}))
+	private sendStopped(reason: string, threadId: number, allThreadsStopped?: boolean): void {
+		this.inferiorRunning	= false;
+		this.threadId					= threadId;
+		this.sendEvent(new Adapter.StoppedEvent({reason, threadId, allThreadsStopped}))
 		this.stopped.fire();
+		this.frames = [];
 	}
 
 	// process one line from debugger
@@ -187,7 +210,10 @@ export class GDB extends DebugSession {
 				if (this.capture && record.type === MI.StreamRecordType.CONSOLE) {
 					this.capture.push(record.cstring);
 				} else {
-					this.sendEvent(new Adapter.OutputEvent({category: outputs[record.type], output: record.cstring}))
+					this.sendEvent(new Adapter.OutputEvent({category: outputs[record.type], output: record.cstring}));
+					if (record.type === MI.StreamRecordType.LOG && record.cstring.includes('internal-error')) {
+						this.sendEvent(new Adapter.TerminatedEvent({restart: !this.inferiorStarted}));
+					}
 				}
 
 			} else if (record.isAsyncRecord()) {
@@ -213,52 +239,51 @@ export class GDB extends DebugSession {
 							case 'stopped': {
 								const reason			= record.results['reason'];
 								const allStopped	= record.results['stopped-threads'] === 'all';
-								this.threadId			= parseInt(record.results['thread-id']);
+								const threadId		= +record.results['thread-id'];
 
 								if (!reason) {
-									if (this.inferiorRunning)
-										this.sendEvent(new Adapter.StoppedEvent({reason: 'breakpoint', threadId: this.threadId}))
+									if (this.inferiorStarted)
+										this.sendEvent(new Adapter.StoppedEvent({reason: 'breakpoint', threadId}))
 									return;
 								}
 
 								switch (reason) {
 									case 'breakpoint-hit': {
-										const bkpt = record.results['bkptno'];
-										const msg = this.logBreakpoints[bkpt];
-
+										const bkpt	= record.results['bkptno'];
+										const msg		= this.logBreakpoints[bkpt];
 										if (msg) {
-											this.printLogPoint(msg).then(msgFormtted => {
-												this.sendEvent(new Adapter.OutputEvent({category: 'stdout', output: msgFormtted}))
+											this.printLogPoint(msg, {}).then(msgFormtted => {
+												this.sendEvent(new Adapter.OutputEvent({category: 'console', output: msgFormtted}))
 											});
 										}
-										this.sendStopped('breakpoint', allStopped);
+										this.sendStopped('breakpoint', threadId, allStopped);
 										break;
 									}
 									case 'watchpoint-trigger':
-										this.sendStopped('data breakpoint', allStopped);
+										this.sendStopped('data breakpoint', threadId, allStopped);
 										break;
 
 									case 'end-stepping-range':
-										this.sendStopped('step', allStopped);
+										this.sendStopped('step', threadId, allStopped);
 										break;
 
 									case 'function-finished':
-										this.sendStopped('step-out', allStopped);
+										this.sendStopped('step-out', threadId, allStopped);
 										break;
 
 									case 'exited-normally':
 										// The inferior has finished execution. Take down the debugger and inform the debug session that there is nothing else to debug
 										this.sendCommand('quit');
-										this.sendEvent(new Adapter.Event('terminated'))
+										this.sendEvent(new Adapter.TerminatedEvent({}));
 										break;
 
 									case 'signal-received':
 										if (!this.ignorePause) {
 											if (record.results['signal-meaning'] === 'Interrupt') {
-												this.sendStopped('pause', allStopped);
+												this.sendStopped('pause', threadId, allStopped);
 											} else {
 												this.lastException = new GDBException(record);
-												this.sendStopped('exception', allStopped);
+												this.sendStopped('exception', threadId, allStopped);
 											}
 										}
 										this.stopped.fire();
@@ -289,7 +314,8 @@ export class GDB extends DebugSession {
 								const threadId = record.results['thread-id'];
 								if (threadId === 'all' || this.threadId === threadId) {
 									this.sendEvent(new Adapter.ContinuedEvent({threadId: this.threadId, allThreadsContinued: threadId === 'all'}))
-									this.threadId = -1;
+									this.threadId 				= -1;
+									this.inferiorRunning	= true;
 									// When the inferior resumes execution, remove all tracked variables which were used to service variable reference IDs
 									this.clearLocals();
 									this.stopped.reset()
@@ -302,10 +328,33 @@ export class GDB extends DebugSession {
 					case MI.AsyncRecordType.NOTIFY:
 						switch (record.klass) {
 							case 'thread-created':
-								this.sendEvent(new Adapter.ThreadEvent({reason: 'started', threadId: record.results['id']}));
+								this.sendEvent(new Adapter.ThreadEvent({reason: 'started', threadId: record.results.id}));
 								break;
 
-							case 'library-loaded': {
+							case 'thread-exited':
+								this.sendEvent(new Adapter.ThreadEvent({reason: 'exited', threadId: record.results.id}));
+								break;
+
+								case 'breakpoint-modified': {
+									const b = record.results.bkpt as MI.Breakpoint;
+									this.sendEvent(new Adapter.BreakpointEvent({reason: 'changed', breakpoint: {
+										id: +b.number,
+										verified: true,
+										message: `hitcount=${b.times}`,
+										//hitCount: b.times,
+									}}));
+
+									const msg = this.logBreakpoints[+b.number];
+									if (msg) {
+										this.printLogPoint(msg, {hits: b.times}).then(msgFormtted => {
+											this.sendEvent(new Adapter.OutputEvent({category: 'console', output: msgFormtted}))
+										});
+									}
+
+									break;
+								}
+	
+								case 'library-loaded': {
 								// If deferred symbol loading is enabled, check that the shared library loaded is in the user specified list
 								const libLoaded = path.basename(record.results['id']);
 								if (this.sharedLibraries.includes(libLoaded))
@@ -428,7 +477,6 @@ export class GDB extends DebugSession {
 		}
 	}
 
-
 	private async getRegisterInfo() {
 		const record 		= await this.sendCommand('-data-list-register-names');
 		this.registers	= record.results['register-names'].map((name: string) => ({name}));
@@ -506,18 +554,31 @@ export class GDB extends DebugSession {
 		return this.sendCommand('-exec-continue');
 	}
 
-	private async pause(): Promise<boolean> {
-		if (this.threadId !== -1)
-			return true;
+	private async while_paused(callback:() => any) {
+		if (this.inferiorRunning) {
+			try {
+				this.ignorePause = true;
+				await this.sendCommand('-exec-interrupt');
+				await this.stopped;
+				return await callback();
+			} finally {
+				if (this.inferiorStarted) {
+					this.ignorePause = false;
+					this.sendCommand('-exec-continue');
+				}
+			}			
+		}
 
-		this.ignorePause = true;
-
-		await this.sendCommand('-exec-interrupt');
-		await this.stopped;
-		return false;
+		return await callback();
 	}
 
-	private async printLogPoint(msg: string): Promise<string> {
+	private async printLogPoint(msg: string, args: Record<string, string>): Promise<string> {
+		return await async_replace(msg, /{(.*?)}/g, async (match: RegExpExecArray) => {
+			return args[match[1]] || await this.evaluateExpression(match[1]);
+		});
+/*
+		msg.replace(/{.*?}/g, (a) => { return a; });
+
 		const vars = msg.match(/{.*?}/g);
 
 		if (vars) {
@@ -528,6 +589,7 @@ export class GDB extends DebugSession {
 			}));
 		}
 		return msg;
+		*/
 	}
 
 	private async clearBreakPoints(breakpoints: Record<string, number>) {
@@ -582,7 +644,7 @@ export class GDB extends DebugSession {
 			}
 
 		await Promise.all(postLoadCommands.map(cmd => this.sendCommand(cmd)));
-		this.inferiorRunning = true;
+		this.inferiorStarted = true;
 	}
 
 	protected async disconnectRequest(_args: DebugProtocol.DisconnectArguments) {
@@ -594,19 +656,17 @@ export class GDB extends DebugSession {
 		const record = await this.sendCommand(`-stack-list-frames --thread ${args.threadId}`);
 		const result = record.results as MI.ListFrames;
 
-		const stack = result.stack.map(([_, frame]): DebugProtocol.StackFrame =>	{
-			return {
-				id:		 args.threadId + +frame.level,
-				name:	 frame.func,
-				source: {
-					name: frame.file ? path.basename(frame.file) : '??',
-					path: frame.fullname
-				},
-				line:	 +frame.line,
-				column: 0,
-				instructionPointerReference: frame.addr
-			};
-		});
+		const stack = result.stack.map(([_, frame]): DebugProtocol.StackFrame =>	({
+			id:		 this.frames.push({thread: args.threadId, frame: +frame.level}) - 1,
+			name:	 frame.func,
+			source: {
+				name: frame.file ? path.basename(frame.file) : '??',
+				path: frame.fullname
+			},
+			line:	 +frame.line,
+			column: 0,
+			instructionPointerReference: frame.addr
+		}));
 
 		return {
 			stackFrames: stack,
@@ -687,6 +747,8 @@ export class GDB extends DebugSession {
 	}
 
 	protected async pauseRequest(args: DebugProtocol.PauseArguments) {
+		if (!this.inferiorRunning)
+			await this.continue();
 		await this.sendCommand(`-exec-interrupt ${args.threadId || ''}`);
 	}
 
@@ -695,11 +757,10 @@ export class GDB extends DebugSession {
 		const breakpoints	= args.breakpoints || [];
 		const normalizedFileName = this.getNormalizedFileName(filename);
 
-		const promise = this.ready.then(async () => {
-			// There are instances where breakpoints won't properly bind to source locations despite enabling async mode on GDB.
-			// To ensure we always bind to source, explicitly pause the debugger, but do not react to the signal from the UI side so as to not get the UI in an odd state
-			const wasPaused = await this.pause();
+		// There are instances where breakpoints won't properly bind to source locations despite enabling async mode on GDB.
+		// To ensure we always bind to source, explicitly pause the debugger, but do not react to the signal from the UI side so as to not get the UI in an odd state
 
+		const promise = this.ready.then(() => this.while_paused(async () => {
 			if (this.breakpoints[filename]) {
 				await Promise.all(this.breakpoints[filename].map(breakpoint => {
 					if (this.logBreakpoints[breakpoint])
@@ -731,12 +792,8 @@ export class GDB extends DebugSession {
 
 			// Only return breakpoints GDB has actually bound to a source; others will be marked verified as the debugger binds them later on
 			this.breakpoints[filename] = ids;
-
-			if (!wasPaused && this.inferiorRunning)
-				this.continue();
-
 			return {breakpoints: confirmed};
-		});
+		}));
 
 		this.startupPromises.push(promise.then(() => {}));
 		return promise;
@@ -842,14 +899,11 @@ export class GDB extends DebugSession {
 
 	protected async gotoRequest(args: DebugProtocol.GotoArguments) {
 		await this.evaluateExpression(`$pc=0x${args.targetId.toString(16)}`);
-		setTimeout(() => this.sendStopped('goto'), 0);
+		setTimeout(() => this.sendStopped('goto', args.threadId), 0);
 	}
 
 	protected async variablesRequest(args: DebugProtocol.VariablesArguments) {
 		const refId = args.variablesReference;
-
-		if (refId > SCOPE.GLOBALS)
-			return await this.getFields(refId, this.globals, SCOPE.GLOBALS + 1);
 
 		if (refId === SCOPE.GLOBALS) {
 			if (this.globals.length === 0) {
@@ -857,7 +911,7 @@ export class GDB extends DebugSession {
 				const symbols = record.results.symbols as MI.Symbols;
 
 				this.statics	= {};
-				for (const file of symbols.debug) {
+				for (const file of symbols.debug)
 					this.statics[file.fullname] = file.symbols.filter(sym => sym.description.startsWith('static ')).map(sym => sym.name);
 
 				this.globals	= symbols.debug.map(file => file.symbols
@@ -874,21 +928,30 @@ export class GDB extends DebugSession {
 
 			const start		= args.start ?? 0;
 			const globals	= args.count ? this.globals.slice(start, args.count) : this.globals.slice(start);
-			const variables = await Promise.all(globals.map(async (g, i): Promise<DebugProtocol.Variable> => {
-				const value = await this.evaluateExpression(g.name);
-				if (!g.referenceID && isCompositeValue(value)) {
-					g							=	await this.createVariable0(g.name);
-					g.referenceID	= i + start + SCOPE.GLOBALS + 1;
-					this.globals[i + start] = g;
+			const variables = (await Promise.all(globals.map(async (g): Promise<DebugProtocol.Variable> => {
+				try {
+					const value = await this.evaluateExpression(g.name);
+					let		refId	= 0;
+					if (isCompositeValue(value)) {
+						const v	=	await this.createVariable(g.name);
+						refId = v.referenceID;
+					}
+					return {
+						name:					g.name,
+						value,
+						type:					g.type,
+						variablesReference:	refId,
+						memoryReference:		memoryReference(value)
+					};
+				} catch (e) {
+					return {
+						name:					'',
+						value:				'',
+						type:					'',
+						variablesReference:	0,
+					};
 				}
-				return {
-					name:					g.name,
-					value,
-					type:					g.type,
-					variablesReference:	g.referenceID,
-					memoryReference:		memoryReference(value)
-				};
-			}));
+			}))).filter(v => v.name);
 			return {variables};
 		}
 
@@ -976,19 +1039,21 @@ export class GDB extends DebugSession {
 	}
 
 	protected async evaluateRequest(args: DebugProtocol.EvaluateArguments) {
+		const expression = args.expression;
+
 		switch (args.context) {
 			case 'repl':
-				this.sendUserCommand(args.expression, args.frameId);
+				if (expression.startsWith('-')) {
+					const record = await this.sendCommand(`${expression} ${this.frameCommand(args.frameId)}`);
+					this.sendEvent(new Adapter.OutputEvent({category: 'console', output: JSON.stringify(record.results, undefined, 2)}))
+				} else {
+					this.sendCommand(`-interpreter-exec ${this.frameCommand(args.frameId)} console ${quoted(expression)}`);
+				}
 				break;
 
 			case 'watch':
 			case 'hover': {
-				// If variable is already being tracked, reuse "cached" result
-				const variable = this.findLocal(args.expression) || await this.createVariable(args.expression, args.frameId)
-
-				if (!variable)
-					throw {message: `Variable '${args.expression}' not found`};
-
+				const variable = this.findLocal(expression) || await this.createVariable(expression, args.frameId)
 				return {
 					result:							variable.value,
 					variablesReference:	variable.referenceID,
