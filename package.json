@@ -29,12 +29,24 @@
   },
   "contributes": {
     "breakpoints": [
-      {
-        "language": "cpp"
-      },
-      {
-        "language": "c"
-      }
+			{ "language": "c" },
+			{ "language": "c++" },
+			{ "language": "cpp" },
+			{ "language": "d" },
+			{ "language": "go" },
+			{ "language": "objective-c" },
+			{ "language": "fortran" },
+			{ "language": "fortran-modern"  },
+      { "language": "FortranFixedForm"  },
+      { "language": "FortranFreeForm"  },
+			{ "language": "fortran90" },
+			{ "language": "fortran_free-form" },
+			{ "language": "fortran_fixed-form"  },
+			{ "language": "pascal"  },
+			{ "language": "objectpascal"  },
+			{ "language": "rust"  },
+			{ "language": "modula2"  },
+			{ "language": "ada" }
     ],
     "debuggers": [
       {
@@ -44,7 +56,23 @@
         "runtime": "node",
         "languages": [
           "c",
-          "cpp"
+          "c++",
+          "cpp",
+          "d",
+          "go",
+          "objective-c",
+          "fortran",
+          "fortran-modern" ,
+          "FortranFixedForm",
+          "FortranFreeForm",
+          "fortran90",
+          "fortran_free-form",
+          "fortran_fixed-form",
+          "pascal",
+          "objectpascal",
+          "rust",
+          "modula2",
+          "ada"
         ],
         "configurationAttributes": {
           "launch": {
@@ -103,14 +131,9 @@
                 "enumDescriptions": [
                   "Disable all debug logging",
                   "Enable command request and response logging in muGDB Output Channel",
-                  "Enable all GDB MI output in Debug Console"
+                  "Enable all GDB MI output in muGDB Output Channel"
                 ],
                 "default": "off"
-              },
-              "externalConsole": {
-                "type": "boolean",
-                "description": "If true, debug target will spawn a new terminal window",
-                "default": false
               },
               "useAbsoluteFilePaths": {
                 "type": "boolean",

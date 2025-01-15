@@ -1,7 +1,7 @@
 // MI grammar based on https://ftp.gnu.org/old-gnu/Manuals/gdb/html_chapter/gdb_22.html
 const VARIABLE		= /^([a-zA-Z_][a-zA-Z0-9_-]*)=/;
 const GDB_PROMPT	= '(gdb)';
-const RECORD			= /^(\d*)(?:([~@&])|(([*+=^])([a-zA-Z0-9_-]*)))/
+const RECORD			= /^(\d*)(?:([~@&])|(([*+=^])([a-zA-Z0-9_-]*)))/;
 const CSTRING		 = /^"((?:[^"\\]|\\.)*?)"/;
 
 // Relative ordering of records in an OUT_OF_BAND_RECORD regexp

@@ -30,7 +30,7 @@ export class ANSIOutputChannel implements vscode.OutputChannel {
 		const decorations: { start: number, end: number, decoration: vscode.TextEditorDecorationType }[] = [];
 		while ((match = ansiRegex.exec(value))) {
 			rawText += match[1];
-			const offset = rawText.length
+			const offset = rawText.length;
 
 			if (decorations.at(-1)?.end === 0)
 				decorations.at(-1)!.end = offset;
@@ -64,7 +64,7 @@ export class ANSIOutputChannel implements vscode.OutputChannel {
 				console.log(`Edit operation ${success ? 'succeeded' : 'failed'}`);
 				for (const d of decorations)
 					this.editor!.setDecorations(d.decoration, [new vscode.Range(new vscode.Position(currentLine, d.start), new vscode.Position(currentLine, d.end))]);
-			})
+			});
 		});
 	}
 
