@@ -19,10 +19,28 @@ class GDBConfigurationProvider implements vscode.DebugConfigurationProvider {
 	}
 }
 
+export class DisassemblyProvider implements vscode.TextDocumentContentProvider {
+	static SCHEME = 'disassembly-source';
+
+	async provideTextDocumentContent(uri: vscode.Uri) {
+		const parts		= uri.path.split('/');
+		const memoryReference = parts[1].split('.')[0];
+		const session	= vscode.debug.activeDebugSession;
+		if (session) {
+			const resp = await session.customRequest('disassemble', {memoryReference});
+			return resp.instructions.map((i: any) =>
+				`${i.address.toString(16).padStart(8, '0')}: ${i.instruction}`
+			).join('\n');
+		}
+		return '';
+	}
+}
+
 export function activate(context: vscode.ExtensionContext) {
 	const outputChannel = vscode.window.createOutputChannel('muGDB');
 
 	context.subscriptions.push(
+		vscode.workspace.registerTextDocumentContentProvider(DisassemblyProvider.SCHEME, new DisassemblyProvider),
 		vscode.debug.registerDebugConfigurationProvider('mugdb', new GDBConfigurationProvider),
 		vscode.debug.registerDebugAdapterDescriptorFactory('mugdb', {
 			createDebugAdapterDescriptor(session: vscode.DebugSession) {

@@ -6,20 +6,23 @@ export class Message implements DebugProtocol.ProtocolMessage {
 	public constructor(public type: string) {}
 }
 
-export class Event extends Message implements DebugProtocol.Event {
-	public constructor(public event: string, public body?: any) {
-			super('event');
-	}
-}
-
-export abstract class EventT<T extends DebugProtocol.Event> extends Message implements DebugProtocol.Event {
+export abstract class EventNoBody extends Message implements DebugProtocol.Event {
 	abstract event: string;
-	public constructor(public body: T['body']) {
-			super('event');
+	public constructor() {
+		super('event');
 	}
 }
 
-export class InitializedEvent    	extends EventT<DebugProtocol.InitializedEvent>	  { event = 'initialized'; }
+export abstract class EventT<T extends DebugProtocol.Event> extends EventNoBody {
+	abstract event: string;
+	public constructor(public body:	T extends { body?: any} ? T['body'] | void : T['body']) {
+		super();
+	}
+}
+
+
+//export class InitializedEvent    	extends Event0	  { event = 'initialized'; }
+export class InitializedEvent    	extends EventNoBody	  														{ event = 'initialized'; }
 export class StoppedEvent        	extends EventT<DebugProtocol.StoppedEvent>	      { event = 'stopped'; }
 export class ContinuedEvent      	extends EventT<DebugProtocol.ContinuedEvent>	    { event = 'continued'; }
 export class ExitedEvent         	extends EventT<DebugProtocol.ExitedEvent>	        { event = 'exited'; }
@@ -36,14 +39,6 @@ export class ProgressUpdateEvent 	extends EventT<DebugProtocol.ProgressUpdateEve
 export class ProgressEndEvent    	extends EventT<DebugProtocol.ProgressEndEvent>	  { event = 'progressEnd'; }
 export class InvalidatedEvent    	extends EventT<DebugProtocol.InvalidatedEvent>	  { event = 'invalidated'; }
 export class MemoryEvent         	extends EventT<DebugProtocol.MemoryEvent>	        { event = 'memory'; }
-
-function format(format: string, args: Record<string, string>): string {
-	return format.replace(/{([^}]+)}/g, (match, paramName) => {
-		if (paramName.length > 0 && paramName[0] !== '_')
-			return match;
-		return args[paramName] && args.hasOwnProperty(paramName) ? args[paramName] : match;
-	})
-}
 
 type ReturnBody<T extends DebugProtocol.Response> = Promise<T['body'] | void>;
 
@@ -72,7 +67,7 @@ export class DebugAdapter implements vscode.DebugAdapter {
 		this.send(response);
 	}
 
-	public sendRequest(command: string, args: any, timeout: number, cb: (response: DebugProtocol.Response) => void) : void {
+	public sendRequest(command: string, args: any, timeout: number, cb: (response: DebugProtocol.Response) => void) : number {
 		const request = {
 			type: 'request',
 			command,
@@ -100,6 +95,7 @@ export class DebugAdapter implements vscode.DebugAdapter {
 				}
 			}, timeout);
 		}
+		return request.seq;
 	}
 
 	handleMessage(message: DebugProtocol.ProtocolMessage): void {
@@ -115,9 +111,9 @@ export class DebugAdapter implements vscode.DebugAdapter {
 						success: true,
 						...(body && {body})
 					});
-					if (request.command === 'initialize') {
-						this.sendEvent(new Event('initialized'));
-					}
+					//if (request.command === 'initialize') {
+					//	this.sendEvent(new Event('initialized'));
+					//}
 				})
 				.catch((err: any) => {
 					this.sendResponse({
@@ -126,8 +122,8 @@ export class DebugAdapter implements vscode.DebugAdapter {
 						request_seq: request.seq,
 						command: request.command,
 						success: false,
-						message: typeof err === 'string' ? err : err.message || (err.format && format(err.format, err.variables ?? {})) || 'unknown error'
-					})
+						message: typeof err === 'string' ? err : err.message
+					});
 				});
 
 		} else if (message.type === 'response') {
@@ -192,11 +188,11 @@ export class DebugAdapter implements vscode.DebugAdapter {
 	}
 
 	private async initializeRequest0(args: DebugProtocol.InitializeRequestArguments): Promise<DebugProtocol.Capabilities> {
-		const clientLinesStart = typeof args.linesStartAt1 === 'boolean' ? 1 : 0;
-		const clientColumnsStart = typeof args.columnsStartAt1 === 'boolean' ? 1 : 0;
+		const clientLinesStart		= typeof args.linesStartAt1 === 'boolean' ? 1 : 0;
+		const clientColumnsStart	= typeof args.columnsStartAt1 === 'boolean' ? 1 : 0;
 
-		this.clientLineToDebugger= this._debuggerLinesStart - clientLinesStart;
-		this.clientLineToDebugger= this._debuggerColumnsStart - clientColumnsStart;
+		this.clientLineToDebugger	= this._debuggerLinesStart - clientLinesStart;
+		this.clientLineToDebugger	= this._debuggerColumnsStart - clientColumnsStart;
 
 		return this.initializeRequest(args);
 	}
@@ -284,8 +280,9 @@ export class DebugAdapter implements vscode.DebugAdapter {
 	protected async locationsRequest	                (_args: DebugProtocol.LocationsArguments):	                ReturnBody<DebugProtocol.LocationsResponse>	                { return; }
 
 	protected customRequest(_command: string, _args: any): Promise<any> {
-		throw {code: 1014, format: 'unrecognized request'};
+		throw 'unrecognized request';
 	}
+
 	protected convertClientLineToDebugger(line: number): number {
 		return line + this.clientLineToDebugger;
 	}

@@ -16,12 +16,13 @@
 		"no-prototype-builtins": "off",
 		"require-atomic-updates": "off",
 		"no-control-regex": "off",
+		"semi": ["error", "always"],
 		"node/no-missing-import": "off",
 		"node/no-unsupported-features/es-syntax": "off",
 		"node/no-empty-function": "off",
 		"node/shebang": "off",
 		"node/no-unpublished-import": ["error", {
-				"allowModules": ["@vscode/debugprotocol"]
+			"allowModules": ["@vscode/debugprotocol"]
 		}]
 },
 	"overrides": [

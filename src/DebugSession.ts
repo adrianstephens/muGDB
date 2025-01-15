@@ -5,15 +5,11 @@ import * as Adapter from './DebugAdapter';
 import * as path from 'path';
 
 export const SCOPE = {
+	GLOBALS:	  99999,
 	LOCAL:	    100000,
-	REGISTERS:	200000,
-	GLOBALS:	  300000,
+	STATICS:		200000,
+	REGISTERS:	300000,
 } as const;
-/*
-export const SCOPE_LOCAL = 100000;
-export const SCOPE_REGISTERS = 200000;
-export const SCOPE_GLOBALS = 300000;
-*/
 
 export class DebuggerException {
 	constructor(public name: string, public description: string) {}
@@ -40,7 +36,17 @@ export type LaunchRequestArguments = DebugProtocol.LaunchRequestArguments & {
 	logging?:							LoggingLevelKeys;
 	useAbsoluteFilePaths?: boolean;
 	sharedLibraries?:			string[];
-	externalConsole?:			boolean;
+}
+
+export type AttachRequestArguments = DebugProtocol.LaunchRequestArguments & {
+	debugger:							string;
+	capabilities?:				DebugProtocol.Capabilities;
+	startupCmds?:					string[];
+	postLoadCmds?:				string[];
+	terminateCmds?:				string[];
+	logging?:							LoggingLevelKeys;
+	useAbsoluteFilePaths?: boolean;
+	sharedLibraries?:			string[];
 }
 
 export function adjustMemory(memoryReference: string, offset?: number): string {
@@ -53,12 +59,10 @@ export function memoryReference(value: string): string | undefined {
 		return match[1];
 }
 
+function optionalJSON(args: any) {
+	return args ? ' ' + JSON.stringify(args) : '';
+}
 
-
-// This is the main class which implements the debug adapter protocol. It will
-// instantiate a separate GDB object which handles spawning and interacting with
-// the GDB process (i.e. parsing MI output). The session handles requests and
-// responses with the IDE
 export abstract class DebugSession extends Adapter.DebugAdapter {
 	private logging: LoggingLevelValue;
 
@@ -123,11 +127,12 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 		this.logging			= configuration.logging ? LoggingLevel[configuration.logging] : LoggingLevel.off;
 	}
 
-	protected abstract recvServer(line: string): void;
 
 	protected getNormalizedFileName(fileName: string): string {
 		return this.useAbsoluteFilePathsForBreakpoints ? fileName : path.basename(fileName);
 	}
+
+	protected abstract recvServer(line: string): void;
 
 	protected sendServer(command: string) {
 		this.log(LoggingLevel.verbose, command);
@@ -145,7 +150,7 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 			outputBuffer = lines.pop()!;
 			lines.forEach(line => {
 				this.log(LoggingLevel.verbose, line);
-				this.recvServer(line)
+				this.recvServer(line);
 			});
 		});
 
@@ -154,31 +159,32 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 		);
 	}
 
-  public log(level: LoggingLevelValue, text: string): void {
-		if (level >= this.logging)
-			this.outputChannel.appendLine(text);
+  public log(level: LoggingLevelValue, text: string | (()=>string)): void {
+		if (level <= this.logging)
+			this.outputChannel.appendLine(typeof text === 'string' ? text : text());
   }
 
 	sendEvent(event: DebugProtocol.Event): void {
 		super.sendEvent(event);
 		if (event.event !== 'output')
-			this.log(LoggingLevel.verbose, `EVENT: ${JSON.stringify(event)}`);
+			this.log(LoggingLevel.basic, () => `EVENT(${event.seq}): ${event.event}${optionalJSON(event.body)}`);
 	}
 	sendResponse(response: DebugProtocol.Response): void {
 		super.sendResponse(response);
-		this.log(LoggingLevel.verbose, `RESPONSE: ${JSON.stringify(response)}`);
+		this.log(LoggingLevel.basic, () => `RESPONSE(${response.request_seq},${response.seq}): ${response.command} ${response.success ? 'SUCCESS' : 'FAIL'}(${response.message ?? ''})${optionalJSON(response.body)}`);
 	}
-	sendRequest(command: string, args: any, timeout: number, cb: (response: DebugProtocol.Response) => void): void{
-		super.sendRequest(command, args, timeout, cb);
-		this.log(LoggingLevel.verbose, `REQUEST: ${JSON.stringify({command, args})}`);
+	sendRequest(command: string, args: any, timeout: number, cb: (response: DebugProtocol.Response) => void): number {
+		const seq = super.sendRequest(command, args, timeout, cb);
+		this.log(LoggingLevel.basic, () => `REQUEST(${seq}): ${command}${optionalJSON(args)}`);
+		return seq;
 	}
 	dispatchRequest(request: DebugProtocol.Request) {
-		this.log(LoggingLevel.verbose, `DISPATCH: ${JSON.stringify(request)}`);
+		this.log(LoggingLevel.basic, () => `DISPATCH(${request.seq}): ${request.command}${optionalJSON(request.arguments)}`);
 		return super.dispatchRequest(request);
 	}
 
 	protected error(text: string): void {
-		this.sendEvent(new Adapter.OutputEvent({category: 'important', output: text}))
+		this.sendEvent(new Adapter.OutputEvent({category: 'important', output: text}));
 		console.error(text);
 	}
 
@@ -187,9 +193,7 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 	//-----------------------------------
 
 	protected async initializeRequest(_args: DebugProtocol.InitializeRequestArguments) {
-		//setTimeout(() => {
-		//	this.sendEvent(new Adapter.Event('initialized'));
-		//}, 0);
+		setTimeout(() => this.sendEvent(new Adapter.InitializedEvent), 0);
 
 		return this.capabilities;
 	}
@@ -199,31 +203,6 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 		this.sharedLibraries		= args.sharedLibraries || [];
 		this.postLoadCommands		= args.postLoadCmds || [];
 		this.terminateCommands	= args.terminateCmds || [];
-	}
-
-	protected async scopesRequest(args: DebugProtocol.ScopesArguments) {
-		return {
-			scopes: [
-				{
-					name: 'Locals',
-					variablesReference: SCOPE.LOCAL + args.frameId,
-					expensive: false,
-					presentationHint: 'locals',
-				},
-				{
-					name: 'Globals',
-					variablesReference: SCOPE.GLOBALS,
-					expensive: true,
-					presentationHint: 'globals',
-				},
-				{
-					name: 'Registers',
-					variablesReference: SCOPE.REGISTERS,
-					expensive: true,
-					presentationHint: 'registers',
-				},
-			],
-		};
 	}
 
 	protected async exceptionInfoRequest(_args: DebugProtocol.ExceptionInfoArguments) {
