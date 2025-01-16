@@ -14,7 +14,7 @@
   "icon": "assets/icon.png",
   "engines": {
     "vscode": "^1.59.0",
-     "node": ">=12.0.0"
+    "node": ">=12.0.0"
   },
   "categories": [
     "Debuggers"
@@ -29,24 +29,60 @@
   },
   "contributes": {
     "breakpoints": [
-			{ "language": "c" },
-			{ "language": "c++" },
-			{ "language": "cpp" },
-			{ "language": "d" },
-			{ "language": "go" },
-			{ "language": "objective-c" },
-			{ "language": "fortran" },
-			{ "language": "fortran-modern"  },
-      { "language": "FortranFixedForm"  },
-      { "language": "FortranFreeForm"  },
-			{ "language": "fortran90" },
-			{ "language": "fortran_free-form" },
-			{ "language": "fortran_fixed-form"  },
-			{ "language": "pascal"  },
-			{ "language": "objectpascal"  },
-			{ "language": "rust"  },
-			{ "language": "modula2"  },
-			{ "language": "ada" }
+      {
+        "language": "c"
+      },
+      {
+        "language": "c++"
+      },
+      {
+        "language": "cpp"
+      },
+      {
+        "language": "d"
+      },
+      {
+        "language": "go"
+      },
+      {
+        "language": "objective-c"
+      },
+      {
+        "language": "fortran"
+      },
+      {
+        "language": "fortran-modern"
+      },
+      {
+        "language": "FortranFixedForm"
+      },
+      {
+        "language": "FortranFreeForm"
+      },
+      {
+        "language": "fortran90"
+      },
+      {
+        "language": "fortran_free-form"
+      },
+      {
+        "language": "fortran_fixed-form"
+      },
+      {
+        "language": "pascal"
+      },
+      {
+        "language": "objectpascal"
+      },
+      {
+        "language": "rust"
+      },
+      {
+        "language": "modula2"
+      },
+      {
+        "language": "ada"
+      }
     ],
     "debuggers": [
       {
@@ -62,7 +98,7 @@
           "go",
           "objective-c",
           "fortran",
-          "fortran-modern" ,
+          "fortran-modern",
           "FortranFixedForm",
           "FortranFreeForm",
           "fortran90",
@@ -144,6 +180,11 @@
                 "type": "array",
                 "description": "Disable auto shared library loads in GDB and only load these. If this setting is specified, it will override any auto-solib-add GDB setting",
                 "default": []
+              },
+              "sourceMapping": {
+                "type": "object",
+                "description": "Map source files",
+                "default": {}
               }
             }
           }

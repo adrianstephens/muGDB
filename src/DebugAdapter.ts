@@ -98,6 +98,10 @@ export class DebugAdapter implements vscode.DebugAdapter {
 		return request.seq;
 	}
 
+	protected error(text: string): void {
+		this.sendEvent(new OutputEvent({category: 'important', output: text}));
+	}
+
 	handleMessage(message: DebugProtocol.ProtocolMessage): void {
 		if (message.type === 'request') {
 			const request = message as DebugProtocol.Request;

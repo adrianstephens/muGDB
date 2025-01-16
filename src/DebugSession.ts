@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import {ChildProcessWithoutNullStreams} from 'child_process';
 import {DebugProtocol} from '@vscode/debugprotocol';
 import * as Adapter from './DebugAdapter';
 import * as path from 'path';
@@ -36,6 +35,7 @@ export type LaunchRequestArguments = DebugProtocol.LaunchRequestArguments & {
 	logging?:							LoggingLevelKeys;
 	useAbsoluteFilePaths?: boolean;
 	sharedLibraries?:			string[];
+	sourceMapping?:				{ [key: string]: string };
 }
 
 export type AttachRequestArguments = DebugProtocol.LaunchRequestArguments & {
@@ -117,6 +117,7 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 	protected terminateCommands: string[] = [];
 	protected useAbsoluteFilePathsForBreakpoints = false;
 	protected sharedLibraries: string[] = [];
+	protected sourceMapping:	Record<string, string> = {};
 	protected	lastException: DebuggerException | null = null;
 	private 	toServer?: {write(command: string): void};
 
@@ -125,9 +126,22 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 		const configuration = _configuration as unknown as LaunchRequestArguments;
 		this.capabilities	= {...this.capabilities, ...configuration.capabilities};
 		this.logging			= configuration.logging ? LoggingLevel[configuration.logging] : LoggingLevel.off;
+		this.useAbsoluteFilePathsForBreakpoints = configuration.useAbsoluteFilePaths || false;
+		this.sourceMapping 			= configuration.sourceMapping || {};
+		this.sharedLibraries		= configuration.sharedLibraries || [];
+		this.postLoadCommands		= configuration.postLoadCmds || [];
+		this.terminateCommands	= configuration.terminateCmds || [];
+
 	}
 
-
+	protected mapSource(fileName: string): string {
+		for (const [k, v] of Object.entries(this.sourceMapping)) {
+			if (fileName.startsWith(k))
+				return v + fileName.slice(k.length);
+		}
+		return fileName;
+	}
+	
 	protected getNormalizedFileName(fileName: string): string {
 		return this.useAbsoluteFilePathsForBreakpoints ? fileName : path.basename(fileName);
 	}
@@ -140,11 +154,11 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 			this.toServer.write(command + '\n');
 	}
 
-	protected setCommunication(process: ChildProcessWithoutNullStreams) {
-		this.toServer = process.stdin;
+	protected setCommunication(input: NodeJS.WritableStream, output: NodeJS.ReadableStream, error?: NodeJS.ReadableStream) {
+		this.toServer = input;//process.stdin;
 
 		let outputBuffer = '';
-		process.stdout.on('data', data => {
+		output.on('data', data => {
 			outputBuffer += data.toString('utf8');
 			const lines = outputBuffer.split('\n') as string[];
 			outputBuffer = lines.pop()!;
@@ -154,9 +168,10 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 			});
 		});
 
-		process.stderr.on('data', data => 
-			console.log(data.toString())
-		);
+		if (error)
+			error.on('data', data => 
+				console.log(data.toString())
+			);
 	}
 
   public log(level: LoggingLevelValue, text: string | (()=>string)): void {
@@ -183,11 +198,6 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 		return super.dispatchRequest(request);
 	}
 
-	protected error(text: string): void {
-		this.sendEvent(new Adapter.OutputEvent({category: 'important', output: text}));
-		console.error(text);
-	}
-
 	//-----------------------------------
 	// Adapter handlers
 	//-----------------------------------
@@ -196,13 +206,6 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 		setTimeout(() => this.sendEvent(new Adapter.InitializedEvent), 0);
 
 		return this.capabilities;
-	}
-
-	protected async launchRequest(args: LaunchRequestArguments) {
-		this.useAbsoluteFilePathsForBreakpoints = args.useAbsoluteFilePaths || false;
-		this.sharedLibraries		= args.sharedLibraries || [];
-		this.postLoadCommands		= args.postLoadCmds || [];
-		this.terminateCommands	= args.terminateCmds || [];
 	}
 
 	protected async exceptionInfoRequest(_args: DebugProtocol.ExceptionInfoArguments) {
