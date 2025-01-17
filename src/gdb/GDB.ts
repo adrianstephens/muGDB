@@ -13,7 +13,6 @@ import {
 	memoryReference,
 	SCOPE,
 } from '../DebugSession';
-import { validateHeaderName } from 'http';
 
 class GDBException extends DebuggerException {
 	location: string;
@@ -25,13 +24,13 @@ class GDBException extends DebuggerException {
 	}
 }
 
-class DummyPromise extends Promise<void> {
-	resolve: ()=>void;
-	constructor() {
-		let _resolve;
-		super(resolve => _resolve = resolve);
-		this.resolve = _resolve!;
-	}
+type _DummyPromise = Promise<void> & {resolve: ()=> void};
+
+function DummyPromise() : _DummyPromise {
+	let _resolve;
+	const p = new Promise<void>(resolve => _resolve = resolve);
+	(p as any).resolve = _resolve;
+	return p as _DummyPromise;
 }
 
 class DeferredPromise {
@@ -361,6 +360,13 @@ export class GDB extends DebugSession {
 	// when set, capture debugger output lines
 	private capture?: 	string[];
 
+	private addStartup() : ()=>void {
+		let _resolve : ()=>void;
+		const p = new Promise<void>(resolve => _resolve = resolve);
+		this.startupPromises.push(p);
+		return _resolve!;
+	}
+
 	private frameCommand(frameId?: number) {
 		if (frameId === undefined)
 			return '';
@@ -371,10 +377,10 @@ export class GDB extends DebugSession {
 		return `--frame ${frame.frame} --thread ${frame.thread}`;
 	}
 
-	private sendStopped(reason: string, threadId: number, allThreadsStopped?: boolean): void {
+	private sendStopped(reason: string, threadId: number, allThreadsStopped?: boolean, text?: string): void {
 		this.inferiorRunning	= false;
 		this.threadId					= threadId;
-		this.sendEvent(new Adapter.StoppedEvent({reason, threadId, allThreadsStopped}));
+		this.sendEvent(new Adapter.StoppedEvent({reason, threadId, allThreadsStopped, text}));
 		this.stopped.fire();
 		this.frames = [];
 	}
@@ -429,6 +435,7 @@ export class GDB extends DebugSession {
 								if (!reason) {
 									if (this.inferiorStarted)
 										this.sendEvent(new Adapter.StoppedEvent({reason: 'breakpoint', threadId}));
+									this.inferiorRunning	= false;
 									return;
 								}
 
@@ -445,7 +452,7 @@ export class GDB extends DebugSession {
 										break;
 									}
 									case 'watchpoint-trigger':
-										this.sendStopped('data breakpoint', threadId, allStopped);
+										this.sendStopped('data breakpoint', threadId, allStopped, "Modified!");
 										break;
 
 									case 'end-stepping-range':
@@ -468,7 +475,7 @@ export class GDB extends DebugSession {
 												this.sendStopped('pause', threadId, allStopped);
 											} else {
 												this.lastException = new GDBException(record);
-												this.sendStopped('exception', threadId, allStopped);
+												this.sendStopped('exception', threadId, allStopped, record.results.name);
 											}
 										}
 										this.stopped.fire();
@@ -607,7 +614,7 @@ export class GDB extends DebugSession {
 	}
 
 	private async sendCommands(commands: string[]): Promise<void> {
-		await Promise.all(commands.map(cmd => this.sendCommand(cmd.replace(/\\/g, '/'))));
+		await Promise.all(commands.map(cmd => cmd && cmd[0] !== '#' && this.sendCommand(cmd.replace(/\\/g, '/'))));
 	}
 
 	private async printLogPoint(msg: string, args: Record<string, string>): Promise<string> {
@@ -739,8 +746,6 @@ export class GDB extends DebugSession {
 	//-----------------------------------
 
 	protected async launchRequest(args: LaunchRequestArguments) {
-		super.launchRequest(args);
-
 		const match = args.debugger && /^remote:(.*?):(\d+)/.exec(args.debugger);
 		if (match) {
 			const options = {
@@ -802,6 +807,9 @@ export class GDB extends DebugSession {
 
 		await this.sendCommands(postLoadCommands);
 		this.inferiorStarted = true;
+
+		if (!this.inferiorRunning)
+			this.sendEvent(new Adapter.StoppedEvent({reason: "startup", allThreadsStopped: true, text: "You probably need a 'continue' in the postLoadCmds"}));
 
 		this.globals = new Globals(this);
 	}
@@ -984,8 +992,7 @@ export class GDB extends DebugSession {
 		// There are instances where breakpoints won't properly bind to source locations despite enabling async mode on GDB.
 		// To ensure we always bind to source, explicitly pause the debugger, but do not react to the signal from the UI side so as to not get the UI in an odd state
 
-		const p = new DummyPromise;
-		this.startupPromises.push(p);
+		const done = this.addStartup();
 		await this.ready;
 
 		return this.pause_while(async () => {
@@ -1017,7 +1024,7 @@ export class GDB extends DebugSession {
 			} catch (e) {
 				console.error(e);
 			}
-			p.resolve();
+			done();
 
 			// Only return breakpoints GDB has actually bound to a source; others will be marked verified as the debugger binds them later on
 			this.breakpoints[filename] = ids;
@@ -1068,7 +1075,7 @@ export class GDB extends DebugSession {
 			dataId,
 			description:	args.name,
 			accessTypes:	['read', 'write', 'readWrite'] as DebugProtocol.DataBreakpointAccessType[],
-			canPersist:		false
+			canPersist:		true
 		};
 	}
 
@@ -1166,6 +1173,10 @@ export class GDB extends DebugSession {
 			return {value: await this.evaluateExpression(`$${name}=${args.value}`)};
 		}
 
+		if (refId >= SCOPE.GLOBALS) {
+			return {value: await this.evaluateExpression(`${name}=${args.value}`)};
+		}
+
 		if (refId >= SCOPE.LOCAL) {
 			return {value: await this.evaluateExpression(`${name}=${args.value}`, refId - SCOPE.LOCAL)};
 		}
@@ -1190,11 +1201,14 @@ export class GDB extends DebugSession {
 
 		switch (args.context) {
 			case 'repl':
-				if (expression.startsWith('-')) {
-					const record = await this.sendCommand(`${expression} ${this.frameCommand(args.frameId)}`);
-					this.sendEvent(new Adapter.OutputEvent({category: 'console', output: JSON.stringify(record.results, undefined, 2)}));
-				} else {
-					this.sendCommand(`-interpreter-exec ${this.frameCommand(args.frameId)} console ${quoted(expression)}`);
+				for (const i of expression.split('\n')) {
+					const line = i.trim();
+					if (line.startsWith('-')) {
+						const record = await this.sendCommand(`${line} ${this.frameCommand(args.frameId)}`);
+						this.sendEvent(new Adapter.OutputEvent({category: 'console', output: JSON.stringify(record.results, undefined, 2)}));
+					} else if (line && line[0] !== '#') {
+						this.sendCommand(`-interpreter-exec ${this.frameCommand(args.frameId)} console ${quoted(line)}`);
+					}
 				}
 				break;
 
