@@ -1,12 +1,11 @@
 import * as vscode from 'vscode';
 import {DebugProtocol} from '@vscode/debugprotocol';
 import * as Adapter from './DebugAdapter';
-import * as path from 'path';
 
 export const SCOPE = {
-	GLOBALS:	  99999,
-	LOCAL:	    100000,
-	STATICS:		200000,
+	GLOBALS:	99999,
+	LOCAL:		100000,
+	STATICS:	200000,
 	REGISTERS:	300000,
 } as const;
 
@@ -15,38 +14,36 @@ export class DebuggerException {
 }
 
 export const LoggingLevel = {
-	off: 0,
-	basic: 1,
-	verbose: 2,
+	off:		0,
+	basic:		1,
+	verbose:	2,
 } as const;
 
 export type LoggingLevelKeys = keyof typeof LoggingLevel;
 export type LoggingLevelValue = typeof LoggingLevel[LoggingLevelKeys];
 
 export type LaunchRequestArguments = DebugProtocol.LaunchRequestArguments & {
-	debugger:							string;
-	debuggerArgs?:				string[];
-	cwd?:									string;
-	env?:									{ [key: string]: string };
-	capabilities?:				DebugProtocol.Capabilities;
-	startupCmds?:					string[];
-	postLoadCmds?:				string[];
-	terminateCmds?:				string[];
-	logging?:							LoggingLevelKeys;
-	useAbsoluteFilePaths?: boolean;
-	sharedLibraries?:			string[];
-	sourceMapping?:				{ [key: string]: string };
+	debugger:				string;
+	debuggerArgs?:			string[];
+	cwd?:					string;
+	env?:					{ [key: string]: string };
+	capabilities?:			DebugProtocol.Capabilities;
+	startupCmds?:			string[];
+	postLoadCmds?:			string[];
+	terminateCmds?:			string[];
+	logging?:				LoggingLevelKeys;
+	sharedLibraries?:		string[];
+	sourceMapping?:			{ [key: string]: string };
 }
 
 export type AttachRequestArguments = DebugProtocol.LaunchRequestArguments & {
-	debugger:							string;
-	capabilities?:				DebugProtocol.Capabilities;
-	startupCmds?:					string[];
-	postLoadCmds?:				string[];
-	terminateCmds?:				string[];
-	logging?:							LoggingLevelKeys;
-	useAbsoluteFilePaths?: boolean;
-	sharedLibraries?:			string[];
+	debugger:				string;
+	capabilities?:			DebugProtocol.Capabilities;
+	startupCmds?:			string[];
+	postLoadCmds?:			string[];
+	terminateCmds?:			string[];
+	logging?:				LoggingLevelKeys;
+	sharedLibraries?:		string[];
 }
 
 export function adjustMemory(memoryReference: string, offset?: number): string {
@@ -67,69 +64,68 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 	private logging: LoggingLevelValue;
 
 	private capabilities: DebugProtocol.Capabilities = {
-		supportsConfigurationDoneRequest:	      true,
-		supportsFunctionBreakpoints:	          true,
-		supportsConditionalBreakpoints:	        true,
-		supportsHitConditionalBreakpoints:	    true,
-		supportsEvaluateForHovers:	            true,
+		supportsConfigurationDoneRequest:	true,
+		supportsFunctionBreakpoints:		true,
+		supportsConditionalBreakpoints:		true,
+		supportsHitConditionalBreakpoints:	true,
+		supportsEvaluateForHovers:			true,
 		exceptionBreakpointFilters: [
 			{filter: 'throw', label: 'Thrown Exceptions'},
 			{filter: 'catch', label: 'Caught Exceptions'},
 		],
-		//supportsStepBack:	                      true,
-		supportsSetVariable:	                  true,
-		//supportsRestartFrame:	                  true,
-		supportsGotoTargetsRequest:	            true,
-		//supportsStepInTargetsRequest:	          true,
-		supportsCompletionsRequest:	            true,
-		//completionTriggerCharacters:           	[],
-		supportsModulesRequest:	                true,
-		//additionalModuleColumns:                [],
-		//supportedChecksumAlgorithms:            [],
-		//supportsRestartRequest:	                true,
-		//supportsExceptionOptions:	              true,
-		//supportsValueFormattingOptions:	        true,
-		supportsExceptionInfoRequest:	          true,
-		//supportTerminateDebuggee:	              true,
-		//supportSuspendDebuggee:	                true,
-		//supportsDelayedStackTraceLoading:	      true,
-		//supportsLoadedSourcesRequest:	          true,
-		supportsLogPoints:	                    true,
-		//supportsTerminateThreadsRequest:	      true,
-		supportsSetExpression:	                true,
-		//supportsTerminateRequest:	              true,
-		supportsDataBreakpoints:	              true,
-		supportsReadMemoryRequest:	            true,
-		supportsWriteMemoryRequest:	            true,
-		supportsDisassembleRequest:	            true,
-		//supportsCancelRequest:	                true,
-		supportsBreakpointLocationsRequest:	    true,
-		//supportsClipboardContext:	              true,
-		supportsSteppingGranularity:	          true,
-		supportsInstructionBreakpoints:	        true,
-		//supportsExceptionFilterOptions:	        true,
+		//supportsStepBack:							true,
+		supportsSetVariable:						true,
+		//supportsRestartFrame:						true,
+		supportsGotoTargetsRequest:					true,
+		//supportsStepInTargetsRequest:				true,
+		supportsCompletionsRequest:					true,
+		//completionTriggerCharacters:				[],
+		supportsModulesRequest:						true,
+		//additionalModuleColumns:					[],
+		//supportedChecksumAlgorithms:				[],
+		//supportsRestartRequest:					true,
+		//supportsExceptionOptions:					true,
+		//supportsValueFormattingOptions:			true,
+		supportsExceptionInfoRequest:				true,
+		//supportTerminateDebuggee:					true,
+		//supportSuspendDebuggee:					true,
+		//supportsDelayedStackTraceLoading:			true,
+		supportsLoadedSourcesRequest:				true,
+		supportsLogPoints:							true,
+		//supportsTerminateThreadsRequest:			true,
+		supportsSetExpression:						true,
+		//supportsTerminateRequest:					true,
+		supportsDataBreakpoints:					true,
+		supportsReadMemoryRequest:					true,
+		supportsWriteMemoryRequest:					true,
+		supportsDisassembleRequest:					true,
+		//supportsCancelRequest:					true,
+		supportsBreakpointLocationsRequest:			true,
+		//supportsClipboardContext:					true,
+		supportsSteppingGranularity:				true,
+		supportsInstructionBreakpoints:				true,
+		//supportsExceptionFilterOptions:			true,
 		//supportsSingleThreadExecutionRequests:	true,
-		//supportsDataBreakpointBytes:	          true,
-		//breakpointModes:                        [],
-		//supportsANSIStyling:	                  true,
+		//supportsDataBreakpointBytes:				true,
+		//breakpointModes:							[],
+		supportsANSIStyling:						true,
 	};
-	protected postLoadCommands: string[] = [];
-	protected terminateCommands: string[] = [];
-	protected useAbsoluteFilePathsForBreakpoints = false;
-	protected sharedLibraries: string[] = [];
-	protected sourceMapping:	Record<string, string> = {};
-	protected	lastException: DebuggerException | null = null;
-	private 	toServer?: {write(command: string): void};
+	protected	postLoadCommands:		string[] = [];
+	protected	terminateCommands:		string[] = [];
+	protected	sharedLibraries:		string[] = [];
+	protected	sourceMapping:			Record<string, string> = {};
+	protected	lastException:			DebuggerException | null = null;
+	protected	toServer?: 				NodeJS.WritableStream;
+	protected	outputBuffer = '';
 
 	constructor(private readonly outputChannel: vscode.OutputChannel, _configuration: vscode.DebugConfiguration) {
 		super();
-		const configuration = _configuration as unknown as LaunchRequestArguments;
-		this.capabilities	= {...this.capabilities, ...configuration.capabilities};
+		const configuration		= _configuration as unknown as LaunchRequestArguments;
+		this.capabilities		= {...this.capabilities, ...configuration.capabilities};
 		this.logging			= configuration.logging ? LoggingLevel[configuration.logging] : LoggingLevel.off;
-		this.useAbsoluteFilePathsForBreakpoints = configuration.useAbsoluteFilePaths || false;
-		this.sourceMapping 			= configuration.sourceMapping || {};
-		this.sharedLibraries		= configuration.sharedLibraries || [];
-		this.postLoadCommands		= configuration.postLoadCmds || [];
+		this.sourceMapping		= configuration.sourceMapping || {};
+		this.sharedLibraries	= configuration.sharedLibraries || [];
+		this.postLoadCommands	= configuration.postLoadCmds || [];
 		this.terminateCommands	= configuration.terminateCmds || [];
 
 	}
@@ -142,10 +138,6 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 		return fileName;
 	}
 	
-	protected getNormalizedFileName(fileName: string): string {
-		return this.useAbsoluteFilePathsForBreakpoints ? fileName : path.basename(fileName);
-	}
-
 	protected abstract recvServer(line: string): void;
 
 	protected sendServer(command: string) {
@@ -154,19 +146,20 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 			this.toServer.write(command + '\n');
 	}
 
+	onInput(data: string) {
+		this.outputBuffer += data;
+		const lines = this.outputBuffer.split('\n') as string[];
+		this.outputBuffer = lines.pop()!;
+		lines.forEach(line => {
+			this.log(LoggingLevel.verbose, line);
+			this.recvServer(line);
+		});
+
+	}
 	protected setCommunication(input: NodeJS.WritableStream, output: NodeJS.ReadableStream, error?: NodeJS.ReadableStream) {
 		this.toServer = input;//process.stdin;
 
-		let outputBuffer = '';
-		output.on('data', data => {
-			outputBuffer += data.toString('utf8');
-			const lines = outputBuffer.split('\n') as string[];
-			outputBuffer = lines.pop()!;
-			lines.forEach(line => {
-				this.log(LoggingLevel.verbose, line);
-				this.recvServer(line);
-			});
-		});
+		output.on('data', data => this.onInput(data.toString('utf8')));
 
 		if (error)
 			error.on('data', data => 
@@ -174,10 +167,10 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 			);
 	}
 
-  public log(level: LoggingLevelValue, text: string | (()=>string)): void {
+	public log(level: LoggingLevelValue, text: string | (()=>string)): void {
 		if (level <= this.logging)
 			this.outputChannel.appendLine(typeof text === 'string' ? text : text());
-  }
+	}
 
 	sendEvent(event: DebugProtocol.Event): void {
 		super.sendEvent(event);
@@ -204,7 +197,6 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 
 	protected async initializeRequest(_args: DebugProtocol.InitializeRequestArguments) {
 		setTimeout(() => this.sendEvent(new Adapter.InitializedEvent), 0);
-
 		return this.capabilities;
 	}
 

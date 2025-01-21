@@ -1,0 +1,297 @@
+  PID  PPID COMM             COMMAND
+  437     1 /usr/sbin/distno /usr/sbin/distnoted agent
+  603     1 /usr/libexec/Use /usr/libexec/UserEventAgent (Aqua)
+  609     1 /usr/sbin/univer /usr/sbin/universalaccessd launchd -s
+  611     1 /usr/libexec/Con /usr/libexec/ContinuityCaptureAgent server
+  612     1 /usr/libexec/pbo /usr/libexec/pboard
+  614     1 /System/Library/ /System/Library/Frameworks/InputMethodKit.framework/Resources/imklaunchagent
+  615     1 /usr/libexec/con /usr/libexec/containermanagerd --runmode=agent --user-container-mode=current --bundle-container-mode=proxy --system-container-mode=none
+  620     1 /usr/libexec/nsu /usr/libexec/nsurlsessiond
+  621     1 /usr/libexec/rap /usr/libexec/rapportd
+  622     1 /usr/sbin/userno /usr/sbin/usernoted
+  624     1 /System/Library/ /System/Library/PrivateFrameworks/ExchangeSync.framework/Versions/Current/exchangesyncd
+  626     1 /usr/libexec/lsd /usr/libexec/lsd
+  630     1 /System/Library/ /System/Library/CoreServices/WiFiAgent.app/Contents/MacOS/WiFiAgent
+  631     1 /usr/libexec/tru /usr/libexec/trustd --agent
+  634     1 /usr/libexec/sec /usr/libexec/secd
+  635     1 /System/Library/ /System/Library/PrivateFrameworks/AssistantServices.framework/Versions/A/Support/assistantd
+  636     1 /System/Library/ /System/Library/PrivateFrameworks/CloudDocsDaemon.framework/Versions/A/Support/bird
+  640     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/corespotlightd
+  642     1 /usr/libexec/due /usr/libexec/duetexpertd
+  646     1 /System/Library/ /System/Library/CoreServices/WindowManager.app/Contents/MacOS/WindowManager
+  655     1 /System/Library/ /System/Library/PrivateFrameworks/FileProvider.framework/Support/fileproviderd
+  656     1 /System/Library/ /System/Library/PrivateFrameworks/UserNotificationsCore.framework/Support/usernotificationsd
+  658     1 /System/Volumes/ /System/Volumes/Preboot/Cryptexes/App/System/Applications/Safari.app/Contents/MacOS/Safari
+  659     1 /System/Applicat /System/Applications/Messages.app/Contents/MacOS/Messages
+  660     1 /System/Applicat /System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal
+  665     1 /System/Library/ /System/Library/PrivateFrameworks/BiomeStreams.framework/Support/BiomeAgent
+  666     1 /System/Applicat /System/Applications/Mail.app/Contents/MacOS/Mail
+  669     1 /System/Library/ /System/Library/Frameworks/Accounts.framework/Versions/A/Support/accountsd
+  670     1 /System/Library/ /System/Library/Input Methods/PressAndHold.app/Contents/PlugIns/PAH_Extension.appex/Contents/MacOS/PAH_Extension -AppleLanguages ("en-US", "en-GB")
+  672     1 /System/Library/ /System/Library/PrivateFrameworks/IDS.framework/identityservicesd.app/Contents/MacOS/identityservicesd
+  673     1 /System/Library/ /System/Library/CoreServices/NotificationCenter.app/Contents/MacOS/NotificationCenter
+  675     1 /System/Library/ /System/Library/CoreServices/Dock.app/Contents/MacOS/Dock
+  677     1 /System/Library/ /System/Library/CoreServices/ControlCenter.app/Contents/MacOS/ControlCenter
+  678     1 /System/Library/ /System/Library/CoreServices/SystemUIServer.app/Contents/MacOS/SystemUIServer
+  679     1 /System/Library/ /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder
+  682     1 /System/Library/ /System/Library/CoreServices/WallpaperAgent.app/Contents/MacOS/WallpaperAgent
+  690     1 /System/Library/ /System/Library/PrivateFrameworks/ViewBridge.framework/Versions/A/XPCServices/ViewBridgeAuxiliary.xpc/Contents/MacOS/ViewBridgeAuxiliary
+  694     1 /System/Library/ /System/Library/CoreServices/sharedfilelistd
+  702     1 /System/Library/ /System/Library/PrivateFrameworks/AMPDevices.framework/Versions/A/Support/AMPDeviceDiscoveryAgent --launchd
+  723     1 /System/Library/ /System/Library/Frameworks/ApplicationServices.framework/Frameworks/ATS.framework/Support/fontd
+  727     1 /usr/libexec/sha /usr/libexec/sharingd
+  728     1 /System/Library/ /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATS.framework/Versions/A/Support/fontworker
+  732     1 /System/Library/ /System/Library/PrivateFrameworks/FamilyCircle.framework/Versions/A/Resources/familycircled
+  736     1 /System/Library/ /System/Library/CoreServices/Spotlight.app/Contents/MacOS/Spotlight
+  746     1 /System/Cryptexe /System/Cryptexes/App/usr/libexec/com.apple.Safari.History
+  749     1 /System/Library/ /System/Library/CoreServices/UIKitSystem.app/Contents/MacOS/UIKitSystem system_app_start
+  775     1 /System/Library/ /System/Library/PrivateFrameworks/HomeKitDaemon.framework/Support/homed
+  784     1 /System/Library/ /System/Library/PrivateFrameworks/IMCore.framework/imagent.app/Contents/MacOS/imagent
+  794     1 /usr/libexec/ses /usr/libexec/seserviced
+  796     1 /System/Library/ /System/Library/PrivateFrameworks/TextInputUIMacHelper.framework/Versions/A/XPCServices/CursorUIViewService.xpc/Contents/MacOS/CursorUIViewService
+  797     1 /System/Library/ /System/Library/PrivateFrameworks/UserActivity.framework/Agents/useractivityd
+  798     1 /System/Library/ /System/Library/PrivateFrameworks/MediaRemote.framework/Support/mediaremoteagent
+  801     1 /usr/libexec/avc /usr/libexec/avconferenced
+  826     1 /System/Library/ /System/Library/CoreServices/Dock.app/Contents/XPCServices/com.apple.dock.extra.xpc/Contents/MacOS/com.apple.dock.extra
+  833     1 /System/Library/ /System/Library/PrivateFrameworks/CoreSpeech.framework/corespeechd
+  839     1 /System/Library/ /System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Resources/commerce
+  879     1 /System/Library/ /System/Library/PrivateFrameworks/PassKitCore.framework/passd
+  884     1 /System/Applicat /System/Applications/Stocks.app/Contents/MacOS/Stocks
+ 1069     1 /System/Library/ /System/Library/ExtensionKit/Extensions/WallpaperVideoExtension.appex/Contents/MacOS/WallpaperVideoExtension
+ 1926     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.Networking.xpc/Contents/MacOS/com.apple.WebKit.Networking
+ 1930     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.GPU.xpc/Contents/MacOS/com.apple.WebKit.GPU
+ 1951     1 /usr/libexec/sea /usr/libexec/searchpartyuseragent
+ 1983     1 /System/Library/ /System/Library/PrivateFrameworks/SafariShared.framework/Versions/A/XPCServices/com.apple.Safari.SearchHelper.xpc/Contents/MacOS/com.apple.Safari.SearchHelper
+ 1997     1 /System/Library/ /System/Library/Image Capture/Support/icdd
+ 2004     1 /System/Library/ /System/Library/CoreServices/AirPlayUIAgent.app/Contents/MacOS/AirPlayUIAgent --launchd
+ 2010     1 /System/Library/ /System/Library/CoreServices/diagnostics_agent
+ 2011     1 /Applications/Sy /Applications/Synergy.app/Contents/MacOS/synergy-service -d
+ 2012     1 /System/Library/ /System/Library/CoreServices/TextInputMenuAgent.app/Contents/MacOS/TextInputMenuAgent
+ 2017     1 /System/Library/ /System/Library/Frameworks/CryptoTokenKit.framework/ctkahp.bundle/Contents/MacOS/ctkahp
+ 2022     1 /System/Cryptexe /System/Cryptexes/App/usr/libexec/webinspectord
+ 2024     1 /Library/Develop /Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/XPCServices/com.apple.CoreSimulator.CoreSimulatorService.xpc/Contents/MacOS/com.apple.CoreSimulator.CoreSimulatorService
+ 2025     1 /Library/Apple/S /Library/Apple/System/Library/PrivateFrameworks/RemotePairing.framework/Versions/A/XPCServices/remotepairingd.xpc/Contents/MacOS/remotepairingd
+ 2031     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+ 2313     1 /System/Library/ /System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Resources/storedownloadd
+ 2609     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.GPU.xpc/Contents/MacOS/com.apple.WebKit.GPU
+ 2613     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+ 2615     1 /Library/Develop /Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/XPCServices/SimLaunchHost.arm64.xpc/Contents/MacOS/SimLaunchHost.arm64
+ 2616     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.Networking.xpc/Contents/MacOS/com.apple.WebKit.Networking
+ 2618     1 /Library/Develop /Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/XPCServices/SimulatorTrampoline.xpc/Contents/MacOS/SimulatorTrampoline
+ 2723     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdbulkimport -s mdworker-bundle -c MDSImporterBundleFinder -m com.apple.metadata.mdbulkimport
+ 2759  2011 /Applications/Sy /Applications/Synergy.app/Contents/MacOS/synergy-tray
+ 2842     1 /usr/libexec/USB /usr/libexec/USBAgent
+ 2855     1 /System/Library/ /System/Library/PrivateFrameworks/People.framework/peopled
+ 3881     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+ 4737     1 /System/Library/ /System/Library/PrivateFrameworks/GeoAnalytics.framework/geoanalyticsd
+ 5017     1 /usr/libexec/blu /usr/libexec/bluetoothuserd
+ 5708     1 /System/Library/ /System/Library/PrivateFrameworks/iCloudNotification.framework/iCloudNotificationAgent
+ 5712     1 /System/Library/ /System/Library/PrivateFrameworks/GenerativeExperiencesRuntime.framework/Versions/A/generativeexperiencesd
+ 5997     1 /usr/libexec/pro /usr/libexec/proactived
+ 6033     1 /System/Library/ /System/Library/PrivateFrameworks/AppPredictionFoundation.framework/Versions/A/XPCServices/AppPredictionIntentsHelperService.xpc/Contents/MacOS/AppPredictionIntentsHelperService
+ 6298     1 /System/Library/ /System/Library/CoreServices/Dock.app/Contents/XPCServices/DockHelper.xpc/Contents/MacOS/DockHelper
+ 6467     1 /Applications/Wi /Applications/Windows App.app/Contents/MacOS/Windows App
+ 6474     1 /usr/libexec/sec /usr/libexec/secinitd
+ 6771     1 /System/Library/ /System/Library/Frameworks/CoreSpotlight.framework/spotlightknowledged -u
+ 7495     1 /System/Library/ /System/Library/PrivateFrameworks/Synapse.framework/Support/contentlinkingd
+ 7534     1 /System/Library/ /System/Library/CoreServices/iconservicesagent
+ 7554     1 /System/Library/ /System/Library/Frameworks/Translation.framework/translationd
+ 7567     1 /System/Library/ /System/Library/PrivateFrameworks/ContextKit.framework/Versions/A/XPCServices/ContextService.xpc/Contents/MacOS/ContextService
+ 7685     1 /usr/libexec/swc /usr/libexec/swcd
+ 7686     1 /usr/libexec/dmd /usr/libexec/dmd
+ 7751     1 /System/Library/ /System/Library/Frameworks/AudioToolbox.framework/AudioComponentRegistrar
+ 7895     1 /usr/libexec/rou /usr/libexec/routined LAUNCHED_BY_LAUNCHD
+ 7993     1 /System/Library/ /System/Library/Frameworks/Contacts.framework/Support/contactsd
+ 8341     1 /System/Library/ /System/Library/CoreServices/ReportCrash agent
+ 8350     1 /System/Library/ /System/Library/PrivateFrameworks/CoreSuggestions.framework/Versions/A/Support/reversetemplated
+ 8643     1 /System/Library/ /System/Library/PrivateFrameworks/SocialLayer.framework/sociallayerd.app/Contents/MacOS/sociallayerd
+ 9688     1 /System/Library/ /System/Library/PrivateFrameworks/SiriInference.framework/Versions/A/siriinferenced
+10790     1 /usr/bin/ssh-age /usr/bin/ssh-agent -l
+11150     1 /System/Library/ /System/Library/PrivateFrameworks/IMDPersistence.framework/XPCServices/IMDPersistenceAgent.xpc/Contents/MacOS/IMDPersistenceAgent
+11164     1 /System/Library/ /System/Library/PrivateFrameworks/StatusKit.framework/StatusKitAgent
+11169     1 /System/Library/ /System/Library/PrivateFrameworks/ChronoCore.framework/Support/chronod
+11183     1 /System/Library/ /System/Library/CoreServices/Screen Time.app/Contents/PlugIns/ScreenTimeWidgetExtension.appex/Contents/MacOS/ScreenTimeWidgetExtension
+11184     1 /System/Applicat /System/Applications/Calendar.app/Contents/PlugIns/CalendarWidgetExtension.appex/Contents/MacOS/CalendarWidgetExtension
+11185     1 /System/Applicat /System/Applications/Weather.app/Contents/PlugIns/WeatherWidget.appex/Contents/MacOS/WeatherWidget
+11186     1 /System/Applicat /System/Applications/Stocks.app/Contents/PlugIns/StocksWidget.appex/Contents/MacOS/StocksWidget
+11187     1 /System/Applicat /System/Applications/Clock.app/Contents/PlugIns/WorldClockWidget.appex/Contents/MacOS/WorldClockWidget
+11223     1 /System/Library/ /System/Library/PrivateFrameworks/DoNotDisturbServer.framework/Support/donotdisturbd
+11236     1 /System/Library/ /System/Library/PrivateFrameworks/AuthKit.framework/Versions/A/Support/akd
+11247     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+11251     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+11458     1 /System/Library/ /System/Library/Frameworks/AppKit.framework/Versions/C/XPCServices/ThemeWidgetControlViewService.xpc/Contents/MacOS/ThemeWidgetControlViewService
+11612     1 /System/Library/ /System/Library/PrivateFrameworks/PhotoAnalysis.framework/Versions/A/Support/photoanalysisd
+11646     1 /Applications/Wi /Applications/Windows App.app/Contents/XPCServices/pasteboard.xpc.xpc/Contents/MacOS/pasteboard.xpc
+11683     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+11783     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+12078     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+12084     1 /System/Library/ /System/Library/PrivateFrameworks/CommunicationsFilter.framework/CMFSyncAgent
+12085     1 /System/Library/ /System/Library/PrivateFrameworks/MessagesBlastDoorSupport.framework/Versions/A/XPCServices/MessagesBlastDoorService.xpc/Contents/MacOS/MessagesBlastDoorService
+12086     1 /System/Library/ /System/Library/PrivateFrameworks/CoreRecents.framework/Versions/A/Support/recentsd
+12093     1 /usr/libexec/fin /usr/libexec/findmylocateagent
+12098     1 /usr/libexec/nat /usr/libexec/naturallanguaged
+12104     1 /usr/libexec/tri /usr/libexec/triald
+12106     1 /usr/libexec/fee /usr/libexec/feedbackd
+12113     1 /System/Library/ /System/Library/PrivateFrameworks/BusinessChatService.framework/businessservicesd
+12114     1 /usr/libexec/icl /usr/libexec/icloudmailagent
+12118     1 /System/Library/ /System/Library/PrivateFrameworks/MessagesBlastDoorSupport.framework/Versions/A/XPCServices/MessagesBlastDoorService.xpc/Contents/MacOS/MessagesBlastDoorService
+12126     1 /usr/libexec/rep /usr/libexec/replayd
+12159     1 /System/Library/ /System/Library/CoreServices/Keychain Circle Notification.app/Contents/MacOS/Keychain Circle Notification
+12160     1 /System/Library/ /System/Library/PrivateFrameworks/CoreCDP.framework/Versions/A/Resources/cdpd
+12238     1 cloudphotod      cloudphotod
+12251     1 /System/Library/ /System/Library/PrivateFrameworks/CalendarDaemon.framework/Support/calaccessd
+12252     1 /System/Library/ /System/Library/CoreServices/CoreLocationAgent.app/Contents/MacOS/CoreLocationAgent
+12254     1 /usr/libexec/rem /usr/libexec/remindd
+12436     1 /System/Library/ /System/Library/PrivateFrameworks/IMTransferServices.framework/IMTransferAgent.app/Contents/MacOS/IMTransferAgent
+12449     1 /usr/libexec/swt /usr/libexec/swtransparencyd
+12450     1 /System/Library/ /System/Library/PrivateFrameworks/CloudTelemetry.framework/Versions/A/XPCServices/CloudTelemetryService.xpc/Contents/MacOS/CloudTelemetryService
+12452     1 /System/Library/ /System/Library/PrivateFrameworks/UsageTracking.framework/Versions/A/UsageTrackingAgent
+12456     1 /System/Library/ /System/Library/PrivateFrameworks/DataAccess.framework/Support/dataaccessd
+12457     1 /System/Library/ /System/Library/Frameworks/ManagedSettings.framework/Versions/A/ManagedSettingsAgent
+12458     1 /System/Library/ /System/Library/PrivateFrameworks/AOSKit.framework/Versions/A/XPCServices/com.apple.iCloudHelper.xpc/Contents/MacOS/com.apple.iCloudHelper
+12467     1 /usr/libexec/sir /usr/libexec/siriknowledged
+12468     1 /System/Library/ /System/Library/PrivateFrameworks/CascadeSets.framework/Versions/A/XPCServices/SetStoreUpdateService.xpc/Contents/MacOS/SetStoreUpdateService
+12471     1 /System/Library/ /System/Library/PrivateFrameworks/IntelligencePlatformCore.framework/Versions/A/intelligenceplatformd
+12505     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+12650     1 /System/Library/ /System/Library/Frameworks/AddressBook.framework/Versions/A/Helpers/AddressBookManager.app/Contents/MacOS/AddressBookManager
+12689     1 /usr/libexec/mlh /usr/libexec/mlhostd
+12691     1 /System/Library/ /System/Library/ExtensionKit/Extensions/Bluetooth.appex/Contents/MacOS/Bluetooth
+12692     1 /System/Library/ /System/Library/PrivateFrameworks/AppleMediaServices.framework/Resources/amsaccountsd
+12693     1 /System/Library/ /System/Library/Frameworks/ExtensionFoundation.framework/Versions/A/XPCServices/extensionkitservice.xpc/Contents/MacOS/extensionkitservice
+12697     1 /System/Library/ /System/Library/PrivateFrameworks/AppleMediaServicesUI.framework/amsengagementd
+12701     1 /System/Library/ /System/Library/PrivateFrameworks/CoreParsec.framework/parsec-fbf
+12705     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+12712     1 /System/Library/ /System/Library/PrivateFrameworks/KerberosHelper/Helpers/DiskUnmountWatcher
+12716     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+12746     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+12749     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+12750     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+12751     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+12752     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+12753     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+12754     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+12756     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+12759     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+12761     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+12764     1 /System/Library/ /System/Library/Frameworks/AddressBook.framework/Versions/A/Helpers/AddressBookSourceSync.app/Contents/MacOS/AddressBookSourceSync
+12769     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+12773     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+12799     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdworker_shared -s mdworker -c MDSImporterWorker -m com.apple.mdworker.shared
+14620     1 /usr/libexec/tra /usr/libexec/transparencyd
+16232     1 /System/Library/ /System/Library/PrivateFrameworks/TCC.framework/Support/tccd
+16366     1 /usr/sbin/cfpref /usr/sbin/cfprefsd agent
+16446     1 /Library/Applica /Library/Application Support/IDriveforMac/IDriveHelperTools/IDriveMonitor.app/Contents/MacOS/IDriveMonitor
+16457     1 /Library/Applica /Library/Application Support/IDriveforMac/IDriveHelperTools/FinderPluginApp.app/Contents/MacOS/FinderPluginApp FinderPluginApp
+16591     1 /Library/Applica /Library/Application Support/IDriveforMac/IDriveHelperTools/FinderPluginApp.app/Contents/PlugIns/IDriveFinderSync.appex/Contents/MacOS/IDriveFinderSync -AppleLanguages ("en-US", "en-GB")
+21980 89607 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Renderer).app/Contents/MacOS/Code Helper (Renderer) --type=renderer --user-data-dir=/Users/adrianstephens/Library/Application Support/Code --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-webview,vscode-file --cors-schemes=vscode-webview,vscode-file --fetch-schemes=vscode-webview,vscode-file --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file --app-path=/Applications/Visual Studio Code.app/Contents/Resources/app --enable-sandbox --enable-blink-features=HighlightAPI --disable-blink-features=FontMatchingCTMigration,StandardizedBrowserZoom, --lang=en-US --num-raster-threads=4 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --renderer-client-id=49 --time-ticks-at-unix-epoch=-1736729083363518 --launch-time-ticks=427799895402 --shared-files --field-trial-handle=1718379636,r,8083599995205931919,2241245848940563459,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=CalculateNativeWinOcclusion,MacWebContentsOcclusion,PlzDedicatedWorker,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version --vscode-window-config=vscode:596a9e39-fcac-4fbf-add7-19aa3d295a53 --seatbelt-client=139
+21986 89607 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper.app/Contents/MacOS/Code Helper --type=utility --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none --user-data-dir=/Users/adrianstephens/Library/Application Support/Code --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-webview,vscode-file --cors-schemes=vscode-webview,vscode-file --fetch-schemes=vscode-webview,vscode-file --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file --shared-files --field-trial-handle=1718379636,r,8083599995205931919,2241245848940563459,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=CalculateNativeWinOcclusion,MacWebContentsOcclusion,PlzDedicatedWorker,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version
+21987 89607 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin) --type=utility --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none --dns-result-order=ipv4first --inspect-port=0 --user-data-dir=/Users/adrianstephens/Library/Application Support/Code --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-webview,vscode-file --cors-schemes=vscode-webview,vscode-file --fetch-schemes=vscode-webview,vscode-file --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file --shared-files --field-trial-handle=1718379636,r,8083599995205931919,2241245848940563459,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=CalculateNativeWinOcclusion,MacWebContentsOcclusion,PlzDedicatedWorker,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version
+22125 21987 /Users/adrianste /Users/adrianstephens/.vscode/extensions/ms-vscode.cpptools-1.22.11-darwin-arm64/bin/cpptools
+22214 21987 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin) /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/json-language-features/server/dist/node/jsonServerMain --node-ipc --clientProcessId=21987
+22247 21987 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin) /Users/adrianstephens/.vscode/extensions/dbaeumer.vscode-eslint-3.0.10/server/out/eslintServer.js --node-ipc --clientProcessId=21987
+22378 21987 /Users/adrianste /Users/adrianstephens/.platformio/penv/bin/python -m platformio -c vscode home --port 45880 --host 127.0.0.1 --session-id fbb2204d11b49e38fa48b50f84ae765506264f73 --shutdown-timeout 3600 --no-open
+22382 89607 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Renderer).app/Contents/MacOS/Code Helper (Renderer) --type=renderer --user-data-dir=/Users/adrianstephens/Library/Application Support/Code --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-webview,vscode-file --cors-schemes=vscode-webview,vscode-file --fetch-schemes=vscode-webview,vscode-file --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file --app-path=/Applications/Visual Studio Code.app/Contents/Resources/app --enable-sandbox --enable-blink-features=HighlightAPI --disable-blink-features=FontMatchingCTMigration,StandardizedBrowserZoom, --lang=en-US --num-raster-threads=4 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --renderer-client-id=52 --time-ticks-at-unix-epoch=-1736729083363518 --launch-time-ticks=427803470917 --shared-files --field-trial-handle=1718379636,r,8083599995205931919,2241245848940563459,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=CalculateNativeWinOcclusion,MacWebContentsOcclusion,PlzDedicatedWorker,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version --vscode-window-config=vscode:596a9e39-fcac-4fbf-add7-19aa3d295a53 --seatbelt-client=184
+22500 89607 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Renderer).app/Contents/MacOS/Code Helper (Renderer) --type=renderer --user-data-dir=/Users/adrianstephens/Library/Application Support/Code --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-webview,vscode-file --cors-schemes=vscode-webview,vscode-file --fetch-schemes=vscode-webview,vscode-file --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file --app-path=/Applications/Visual Studio Code.app/Contents/Resources/app --enable-sandbox --enable-blink-features=HighlightAPI --disable-blink-features=FontMatchingCTMigration,StandardizedBrowserZoom, --lang=en-US --num-raster-threads=4 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --renderer-client-id=53 --time-ticks-at-unix-epoch=-1736729083363518 --launch-time-ticks=427803910255 --shared-files --field-trial-handle=1718379636,r,8083599995205931919,2241245848940563459,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=CalculateNativeWinOcclusion,MacWebContentsOcclusion,PlzDedicatedWorker,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version --vscode-window-config=vscode:596a9e39-fcac-4fbf-add7-19aa3d295a53 --seatbelt-client=184
+22583 21987 Amazon Q Helper  Amazon Q Helper (Workspace Context)    
+22675 21987 /Users/adrianste /Users/adrianstephens/.vscode/extensions/rust-lang.rust-analyzer-0.3.2264-darwin-arm64/server/rust-analyzer
+23335     1 /usr/libexec/int /usr/libexec/intelligentroutingd
+26280     1 /System/Library/ /System/Library/CoreServices/Siri.app/Contents/MacOS/Siri launchd
+26598     1 /System/Library/ /System/Library/PrivateFrameworks/SyncedDefaults.framework/Support/syncdefaultsd
+26599     1 /usr/libexec/net /usr/libexec/networkserviceproxy
+26671     1 /usr/libexec/pkd /usr/libexec/pkd
+27085     1 /System/Library/ /System/Library/CoreServices/Siri.app/Contents/XPCServices/SiriNCService.xpc/Contents/MacOS/SiriNCService
+27680     1 /System/Library/ /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Versions/A/Support/mdwrite
+27819     1 /System/Library/ /System/Library/PrivateFrameworks/GeoServices.framework/Versions/A/XPCServices/com.apple.geod.xpc/Contents/MacOS/com.apple.geod
+27874     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+27876     1 /System/Applicat /System/Applications/Mail.app/Contents/PlugIns/com.apple.mail.SpotlightIndexExtension.appex/Contents/MacOS/com.apple.mail.SpotlightIndexExtension -AppleLanguages ("en-US", "en-GB")
+28252     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+29103     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+29104     1 /System/Library/ /System/Library/PrivateFrameworks/CoreParsec.framework/parsecd
+29106     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+31321 90274 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin) /Users/adrianstephens/.vscode/extensions/ms-python.vscode-pylance-2024.12.1/dist/server.bundle.js --cancellationReceive=file:31eb902163e77c6171f74944fba784a05a0b6f888a --node-ipc --clientProcessId=90274
+31984     1 /System/Library/ /System/Library/PrivateFrameworks/TelephonyUtilities.framework/callservicesd
+33764     1 /System/Library/ /System/Library/PrivateFrameworks/PhotoLibraryServices.framework/Versions/A/Support/photolibraryd
+33766     1 /System/Library/ /System/Library/CoreServices/ScopedBookmarkAgent
+33771     1 /System/Library/ /System/Library/PrivateFrameworks/MediaAnalysis.framework/Versions/A/mediaanalysisd
+40614     1 /usr/libexec/kno /usr/libexec/knowledge-agent
+42100     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+42996     1 /System/Library/ /System/Library/Frameworks/NetFS.framework/Versions/A/XPCServices/PlugInLibraryService.xpc/Contents/MacOS/PlugInLibraryService
+44384  2011 /var/folders/67/ /var/folders/67/0sw8fv_94n3dyth5d69vgwk80000gn/T/synergy-core server -f --no-tray --ipc -c /Users/adrianstephens/Library/Preferences/Synergy/synergy.conf --serial-key 7B76323B6D61696E74656E616E63653B70726F3B61647269616E207374657068656E733B313B61647269616E7374657068656E73406D736E2E636F6D3B203B313737373530373230303B313738303138353630307D --name macmini-da75b149 --debug INFO --address 0.0.0.0:24800
+46460     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+47057     1 /System/Applicat /System/Applications/System Settings.app/Contents/MacOS/System Settings
+47059     1 /System/Applicat /System/Applications/System Settings.app/Contents/PlugIns/GeneralSettings.appex/Contents/MacOS/GeneralSettings
+47060     1 /System/Library/ /System/Library/ExtensionKit/Extensions/AppleIDSettings.appex/Contents/MacOS/AppleIDSettings
+47061     1 /System/Library/ /System/Library/ExtensionKit/Extensions/VPN.appex/Contents/MacOS/VPN
+47063     1 /System/Library/ /System/Library/ExtensionKit/Extensions/FamilySettings.appex/Contents/MacOS/FamilySettings
+47064     1 /System/Library/ /System/Library/ExtensionKit/Extensions/FollowUpSettingsExtension.appex/Contents/MacOS/FollowUpSettingsExtension
+47065     1 /System/Library/ /System/Library/ExtensionKit/Extensions/HeadphoneSettingsExtension.appex/Contents/MacOS/HeadphoneSettingsExtension
+47066     1 /System/Library/ /System/Library/ExtensionKit/Extensions/ClassroomSettings.appex/Contents/MacOS/ClassroomSettings
+47069     1 /usr/libexec/stu /usr/libexec/studentd
+47078     1 /System/Library/ /System/Library/ExtensionKit/Extensions/AboutExtension.appex/Contents/MacOS/AboutExtension
+47437     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+50744     1 /System/Library/ /System/Library/PrivateFrameworks/AppStoreDaemon.framework/Support/appstoreagent
+50795     1 /System/Library/ /System/Library/PrivateFrameworks/CloudTelemetry.framework/Versions/A/XPCServices/CloudTelemetryService.xpc/Contents/MacOS/CloudTelemetryService
+50818     1 /System/Library/ /System/Library/CoreServices/UniversalControl.app/Contents/MacOS/UniversalControl
+51058     1 /System/Library/ /System/Library/Frameworks/ExtensionFoundation.framework/Versions/A/XPCServices/extensionkitservice.xpc/Contents/MacOS/extensionkitservice
+51235     1 /usr/libexec/nea /usr/libexec/neagent
+51238     1 /System/Library/ /System/Library/Frameworks/CryptoTokenKit.framework/ctkd -tw
+51449     1 /System/Library/ /System/Library/CoreServices/CoreServicesUIAgent.app/Contents/MacOS/CoreServicesUIAgent
+51730     1 /System/Library/ /System/Library/PrivateFrameworks/AssetCacheServices.framework/Versions/A/XPCServices/AssetCacheLocatorService.xpc/Contents/MacOS/AssetCacheLocatorService -a
+54492     1 /System/Library/ /System/Library/PrivateFrameworks/VoiceShortcuts.framework/Versions/A/Support/siriactionsd
+55061     1 /System/Library/ /System/Library/CoreServices/audioaccessoryd
+60878     1 /System/Library/ /System/Library/CoreServices/Setup Assistant.app/Contents/Resources/mbuseragent
+61057     1 /System/Library/ /System/Library/PrivateFrameworks/AMPLibrary.framework/Versions/A/Support/AMPLibraryAgent --launchd
+61195     1 /System/Library/ /System/Library/PrivateFrameworks/IMDPersistence.framework/IMAutomaticHistoryDeletionAgent.app/Contents/MacOS/IMAutomaticHistoryDeletionAgent
+62269     1 /System/Library/ /System/Library/PrivateFrameworks/CloudKitDaemon.framework/Support/cloudd
+63447     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+65678     1 /System/Library/ /System/Library/PrivateFrameworks/ScreenTimeCore.framework/Versions/A/ScreenTimeAgent
+65976     1 /System/Library/ /System/Library/Frameworks/LocalAuthentication.framework/Support/coreauthd
+72953     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+73608     1 /System/Library/ /System/Library/CoreServices/talagentd
+79942     1 /System/Library/ /System/Library/PrivateFrameworks/IntelligencePlatformCompute.framework/Versions/A/XPCServices/IntelligencePlatformComputeService.xpc/Contents/MacOS/IntelligencePlatformComputeService
+80706     1 /System/Library/ /System/Library/PrivateFrameworks/CoreDuetContext.framework/Resources/ContextStoreAgent
+81227     1 /System/Library/ /System/Library/Frameworks/CoreTelephony.framework/Support/CommCenter -L
+81323     1 /System/Cryptexe /System/Cryptexes/App/System/Library/CoreServices/SafariSupport.bundle/Contents/MacOS/SafariBookmarksSyncAgent
+82688     1 /System/Library/ /System/Library/PrivateFrameworks/CoreSuggestions.framework/Versions/A/Support/suggestd
+82838     1 /usr/libexec/lin /usr/libexec/linkd
+84743     1 /usr/libexec/fmf /usr/libexec/fmfd
+88475     1 /Applications/Gi /Applications/GitHub Desktop.app/Contents/MacOS/GitHub Desktop
+88478 88475 /Applications/Gi /Applications/GitHub Desktop.app/Contents/Frameworks/GitHub Desktop Helper (GPU).app/Contents/MacOS/GitHub Desktop Helper (GPU) --type=gpu-process --user-data-dir=/Users/adrianstephens/Library/Application Support/GitHub Desktop --gpu-preferences=UAAAAAAAAAAgAAAEAAAAAAAAAAAAAAAAAABgAAEAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAA --shared-files --field-trial-handle=1718379636,r,7963035835501168440,14723325383806748799,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=MacWebContentsOcclusion,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version --seatbelt-client=36
+88479 88475 /Applications/Gi /Applications/GitHub Desktop.app/Contents/Frameworks/GitHub Desktop Helper.app/Contents/MacOS/GitHub Desktop Helper --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-US --service-sandbox-type=network --user-data-dir=/Users/adrianstephens/Library/Application Support/GitHub Desktop --shared-files --field-trial-handle=1718379636,r,7963035835501168440,14723325383806748799,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=MacWebContentsOcclusion,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version --seatbelt-client=36
+88498 88475 /Applications/Gi /Applications/GitHub Desktop.app/Contents/Frameworks/GitHub Desktop Helper (Renderer).app/Contents/MacOS/GitHub Desktop Helper (Renderer) --type=renderer --user-data-dir=/Users/adrianstephens/Library/Application Support/GitHub Desktop --app-path=/Applications/GitHub Desktop.app/Contents/Resources/app --no-sandbox --no-zygote --disable-blink-features=Auxclick --lang=en-US --num-raster-threads=4 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --renderer-client-id=4 --time-ticks-at-unix-epoch=-1736729083363226 --launch-time-ticks=415631362801 --shared-files --field-trial-handle=1718379636,r,7963035835501168440,14723325383806748799,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=MacWebContentsOcclusion,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version
+89607     1 /Applications/Vi /Applications/Visual Studio Code.app/Contents/MacOS/Electron
+89610     1 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Electron Framework.framework/Helpers/chrome_crashpad_handler --no-rate-limit --monitor-self-annotation=ptype=crashpad-handler --database=/Users/adrianstephens/Library/Application Support/Code/Crashpad --url=appcenter://code?aid=de75e3cc-e22f-4f42-a03f-1409c21d8af8&uid=6e06ef7f-0758-449d-bad8-b85f9dd6a2fc&iid=6e06ef7f-0758-449d-bad8-b85f9dd6a2fc&sid=6e06ef7f-0758-449d-bad8-b85f9dd6a2fc --annotation=_companyName=Microsoft --annotation=_productName=VSCode --annotation=_version=1.96.4 --annotation=plat=OS X --annotation=prod=Electron --annotation=ver=32.2.6 --handshake-fd=24
+89611 89607 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (GPU).app/Contents/MacOS/Code Helper (GPU) --type=gpu-process --user-data-dir=/Users/adrianstephens/Library/Application Support/Code --gpu-preferences=UAAAAAAAAAAgAAAEAAAAAAAAAAAAAAAAAABgAAEAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAA --shared-files --field-trial-handle=1718379636,r,8083599995205931919,2241245848940563459,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=CalculateNativeWinOcclusion,MacWebContentsOcclusion,PlzDedicatedWorker,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version --seatbelt-client=36
+89612 89607 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper.app/Contents/MacOS/Code Helper --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-US --service-sandbox-type=network --user-data-dir=/Users/adrianstephens/Library/Application Support/Code --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-webview,vscode-file --cors-schemes=vscode-webview,vscode-file --fetch-schemes=vscode-webview,vscode-file --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file --shared-files --field-trial-handle=1718379636,r,8083599995205931919,2241245848940563459,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=CalculateNativeWinOcclusion,MacWebContentsOcclusion,PlzDedicatedWorker,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version --seatbelt-client=36
+89614 89607 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Renderer).app/Contents/MacOS/Code Helper (Renderer) --type=renderer --user-data-dir=/Users/adrianstephens/Library/Application Support/Code --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-webview,vscode-file --cors-schemes=vscode-webview,vscode-file --fetch-schemes=vscode-webview,vscode-file --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file --app-path=/Applications/Visual Studio Code.app/Contents/Resources/app --enable-sandbox --enable-blink-features=HighlightAPI --disable-blink-features=FontMatchingCTMigration,StandardizedBrowserZoom, --lang=en-US --num-raster-threads=4 --enable-zero-copy --enable-gpu-memory-buffer-compositor-resources --enable-main-frame-before-activation --renderer-client-id=5 --time-ticks-at-unix-epoch=-1736729083363518 --launch-time-ticks=415668888859 --shared-files --field-trial-handle=1718379636,r,8083599995205931919,2241245848940563459,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=CalculateNativeWinOcclusion,MacWebContentsOcclusion,PlzDedicatedWorker,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version --vscode-window-config=vscode:7e036c41-d653-45cd-8daf-0bd174e37259 --seatbelt-client=66
+89777 89607 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper.app/Contents/MacOS/Code Helper --type=utility --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none --user-data-dir=/Users/adrianstephens/Library/Application Support/Code --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-webview,vscode-file --cors-schemes=vscode-webview,vscode-file --fetch-schemes=vscode-webview,vscode-file --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file --shared-files --field-trial-handle=1718379636,r,8083599995205931919,2241245848940563459,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=CalculateNativeWinOcclusion,MacWebContentsOcclusion,PlzDedicatedWorker,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version
+89791 89607 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper.app/Contents/MacOS/Code Helper --type=utility --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none --user-data-dir=/Users/adrianstephens/Library/Application Support/Code --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-webview,vscode-file --cors-schemes=vscode-webview,vscode-file --fetch-schemes=vscode-webview,vscode-file --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file --shared-files --field-trial-handle=1718379636,r,8083599995205931919,2241245848940563459,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=CalculateNativeWinOcclusion,MacWebContentsOcclusion,PlzDedicatedWorker,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version
+89946     1 /usr/libexec/tip /usr/libexec/tipsd
+90274 89607 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin) --type=utility --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none --dns-result-order=ipv4first --inspect-port=0 --user-data-dir=/Users/adrianstephens/Library/Application Support/Code --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-webview,vscode-file --cors-schemes=vscode-webview,vscode-file --fetch-schemes=vscode-webview,vscode-file --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file --shared-files --field-trial-handle=1718379636,r,8083599995205931919,2241245848940563459,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=CalculateNativeWinOcclusion,MacWebContentsOcclusion,PlzDedicatedWorker,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version
+90275 89607 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper.app/Contents/MacOS/Code Helper --type=utility --utility-sub-type=node.mojom.NodeService --lang=en-US --service-sandbox-type=none --user-data-dir=/Users/adrianstephens/Library/Application Support/Code --standard-schemes=vscode-webview,vscode-file --enable-sandbox --secure-schemes=vscode-webview,vscode-file --cors-schemes=vscode-webview,vscode-file --fetch-schemes=vscode-webview,vscode-file --service-worker-schemes=vscode-webview --code-cache-schemes=vscode-webview,vscode-file --shared-files --field-trial-handle=1718379636,r,8083599995205931919,2241245848940563459,262144 --enable-features=ScreenCaptureKitPickerScreen,ScreenCaptureKitStreamPickerSonoma --disable-features=CalculateNativeWinOcclusion,MacWebContentsOcclusion,PlzDedicatedWorker,SpareRendererForSitePerProcess,TimeoutHangingVideoCaptureStarts --variations-seed-version
+90391 90274 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin) --max-old-space-size=3072 /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/node_modules/typescript/lib/tsserver.js --serverMode partialSemantic --useInferredProjectPerProjectRoot --disableAutomaticTypingAcquisition --cancellationPipeName /var/folders/67/0sw8fv_94n3dyth5d69vgwk80000gn/T/vscode-typescript501/1bbaf60b0c831ca332e3/tscancellation-3dcc07c142c787baf2d9.tmp* --globalPlugins @vscode/copilot-typescript-server-plugin --pluginProbeLocations /Users/adrianstephens/.vscode/extensions/github.copilot-chat-0.23.2 --locale en --noGetErrOnBackgroundUpdate --canUseWatchEvents --validateDefaultNpmLocation --useNodeIpc
+90392 90274 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin) --max-old-space-size=3072 /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/node_modules/typescript/lib/tsserver.js --useInferredProjectPerProjectRoot --enableTelemetry --cancellationPipeName /var/folders/67/0sw8fv_94n3dyth5d69vgwk80000gn/T/vscode-typescript501/1bbaf60b0c831ca332e3/tscancellation-16a46241b6553afcf527.tmp* --globalPlugins @vscode/copilot-typescript-server-plugin --pluginProbeLocations /Users/adrianstephens/.vscode/extensions/github.copilot-chat-0.23.2 --locale en --noGetErrOnBackgroundUpdate --canUseWatchEvents --validateDefaultNpmLocation --useNodeIpc
+90520 90392 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin) /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/node_modules/typescript/lib/typingsInstaller.js --globalTypingsCacheLocation /Users/adrianstephens/Library/Caches/typescript/5.7 --enableTelemetry --typesMapLocation /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/node_modules/typescript/lib/typesMap.json --validateDefaultNpmLocation
+90724 90274 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin) /Users/adrianstephens/.vscode/extensions/dbaeumer.vscode-eslint-3.0.10/server/out/eslintServer.js --node-ipc --clientProcessId=90274
+90853 90274 Amazon Q Helper  Amazon Q Helper (Workspace Context)    
+91431     1 /System/Library/ /System/Library/PrivateFrameworks/SoftwareUpdate.framework/Resources/SoftwareUpdateNotificationManager.app/Contents/MacOS/SoftwareUpdateNotificationManager
+91433     1 /System/Library/ /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/HIServices.framework/Versions/A/XPCServices/com.apple.hiservices-xpcservice.xpc/Contents/MacOS/com.apple.hiservices-xpcservice
+91436     1 /System/Library/ /System/Library/Frameworks/MediaAccessibility.framework/Versions/A/XPCServices/com.apple.accessibility.mediaaccessibilityd.xpc/Contents/MacOS/com.apple.accessibility.mediaaccessibilityd
+91809 90274 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin) /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/json-language-features/server/dist/node/jsonServerMain --node-ipc --clientProcessId=90274
+92194 90274 /Applications/Vi /Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin) /Applications/Visual Studio Code.app/Contents/Resources/app/extensions/markdown-language-features/dist/serverWorkerMain --node-ipc --clientProcessId=90274
+92237 90274 /Users/adrianste /Users/adrianstephens/.vscode/extensions/ms-vscode.cpptools-1.22.11-darwin-arm64/bin/cpptools
+96515     1 /System/Library/ /System/Library/Services/AppleSpell.service/Contents/MacOS/AppleSpell
+97130     1 /System/Library/ /System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent
+98002     1 /System/Library/ /System/Library/ExtensionKit/Extensions/Sharing.appex/Contents/MacOS/Sharing
+98004     1 /System/Library/ /System/Library/PrivateFrameworks/AMPSharing.framework/Versions/A/PlugIns/SharingPrefsExtension.appex/Contents/MacOS/SharingPrefsExtension -AppleLanguages ("en", "en-US", "en-GB")
+98060     1 /System/Applicat /System/Applications/Messages.app/Contents/PlugIns/Messages Assistant Extension.appex/Contents/MacOS/Messages Assistant Extension -AppleLanguages ("en-US", "en-GB")
+10392 90359 /bin/sh          /bin/sh /usr/bin/man ps
+10408 10392 /bin/sh          /bin/sh /usr/bin/man ps
+10411 10408 /usr/bin/less    /usr/bin/less -s
+90359 90275 /bin/zsh         /bin/zsh -il
+21988 90275 /bin/zsh         /bin/zsh -il
+73986 90275 /bin/zsh         /bin/zsh -i
+94511   660 login            login -pf adrianstephens
+94514 94511 -zsh             -zsh
+10491 90275 /bin/zsh         /bin/zsh -il
+12807 10491 ps               ps -x -o pid,ppid,comm,command

@@ -19,7 +19,12 @@
   "categories": [
     "Debuggers"
   ],
-  "repository": "https://github.com/penagos/vgdb.git",
+  "repository": "https://github.com/adrianstephens/mugdb.git",
+  "files": [
+		"out/**/*.js",
+		"assets/*",
+		"LICENSE.txt"
+	],
   "main": "./out/extension",
   "activationEvents": [
     "onDebugResolve:mugdb"
@@ -28,6 +33,13 @@
     "request": "never"
   },
   "contributes": {
+    "commands": [
+      {
+        "command": "mugdb.pickProcess",
+        "title": "PickProcess",
+        "category": "Debug"
+      }
+    ],
     "breakpoints": [
       {
         "language": "c"
@@ -171,16 +183,6 @@
                 ],
                 "default": "off"
               },
-              "useAbsoluteFilePaths": {
-                "type": "boolean",
-                "description": "If enabled, absolute file paths will be used to set breakpoints. Otherwise, only the filename will be used. Useful when your debug symbols are referencing relative paths and not absolute paths.",
-                "default": true
-              },
-              "sharedLibraries": {
-                "type": "array",
-                "description": "Disable auto shared library loads in GDB and only load these. If this setting is specified, it will override any auto-solib-add GDB setting",
-                "default": []
-              },
               "sourceMapping": {
                 "type": "object",
                 "description": "Map source files",
@@ -197,9 +199,8 @@
     "lint": "eslint \"src/**/*.ts\"",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "prepare": "npm run compile",
-    "pretest": "npm run compile",
-    "posttest": "npm run lint"
+		"package": "vsce package",
+		"publish": "vsce publish patch"
   },
   "devDependencies": {
     "@types/node": "^14.14.37",

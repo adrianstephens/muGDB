@@ -17,26 +17,20 @@
             "group": "build",
             "isBackground": true,
             "problemMatcher": [
-                "$ts-webpack-watch",
-                "$tslint-webpack-watch"
+                "$tsc-watch"
             ]
         },
         {
-            "type": "npm",
-            "script": "compile-web",
-            "problemMatcher": [
-                "$ts-webpack",
-                "$tslint-webpack"
-            ]
+            "label": "package",
+            "type": "shell",
+            "command": "vsce package",
+            "problemMatcher": []
         },
         {
-            "type": "npm",
-            "script": "watch-web",
-            "group": "build",
-            "isBackground": true,
-            "problemMatcher": [
-                "$ts-webpack-watch",
-                "$tslint-webpack-watch"
-            ]
+            "label": "install",
+            "type": "shell",
+            "command": "code --install-extension ${workspaceFolder}/*.vsix",
+            "problemMatcher": []
         }
     ]
+}
