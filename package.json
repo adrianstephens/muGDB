@@ -2,7 +2,7 @@
   "name": "mugdb",
   "displayName": "muGDB",
   "description": "minimal GDB support for Visual Studio Code",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "publisher": "isopodlabs",
   "license": "MIT",
   "keywords": [
@@ -21,10 +21,10 @@
   ],
   "repository": "https://github.com/adrianstephens/mugdb.git",
   "files": [
-		"out/**/*.js",
-		"assets/*",
-		"LICENSE.txt"
-	],
+    "out/**/*.js",
+    "assets/*",
+    "LICENSE.txt"
+  ],
   "main": "./out/extension",
   "activationEvents": [
     "onDebugResolve:mugdb"
@@ -190,7 +190,51 @@
               }
             }
           }
-        }
+        },
+        "initialConfigurations": [
+          {
+            "type": "mugdb",
+            "request": "launch",
+            "name": "Launch GDB with muGDB",
+            "debugger": "gdb",
+            "debuggerArgs": [
+              "a.out"
+            ],
+            "cwd": "${workspaceFolder}",
+            "startupCmds": [],
+            "postLoadCmds": [
+              "tbreak main",
+              "run"
+            ],
+            "terminateCmds": [],
+            "logging": "off",
+            "sourceMapping": {}
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "muGDB Debug",
+            "description": "Launch GDB with muGDB",
+            "body": {
+              "type": "mugdb",
+              "request": "launch",
+              "name": "Launch GDB with muGDB",
+              "debugger": "gdb",
+              "debuggerArgs": [
+                "a.out"
+              ],
+              "cwd": "${workspaceFolder}",
+              "startupCmds": [],
+              "postLoadCmds": [
+                "tbreak main",
+                "run"
+              ],
+              "terminateCmds": [],
+              "logging": "off",
+              "sourceMapping": {}
+            }
+          }
+        ]
       }
     ]
   },
@@ -199,8 +243,8 @@
     "lint": "eslint \"src/**/*.ts\"",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-		"package": "vsce package",
-		"publish": "vsce publish patch"
+    "package": "vsce package",
+    "publish": "vsce publish patch"
   },
   "devDependencies": {
     "@types/node": "^14.14.37",

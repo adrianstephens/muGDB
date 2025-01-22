@@ -16,13 +16,25 @@
             "script": "watch",
             "group": "build",
             "isBackground": true,
-            "problemMatcher": [
-                "$tsc-watch"
-            ]
+            "problemMatcher": "$tsc-watch"
         },
         {
-            "label": "package",
             "type": "shell",
+            "label": "prepublish",
+            "command": "git add .; if [ '${input:version}' != 'none' ]; then npm version ${input:version} --force; fi",
+            "problemMatcher": [],
+            "dependsOn": "npm: compile"
+        },
+        {
+            "type": "shell",
+            "label": "PUBLISH",
+            "command": "vsce publish",
+            "problemMatcher": [],
+            "dependsOn": "prepublish"
+        },
+        {
+            "type": "shell",
+            "label": "PACKAGE",
             "command": "vsce package",
             "problemMatcher": []
         },
@@ -32,5 +44,14 @@
             "command": "code --install-extension ${workspaceFolder}/*.vsix",
             "problemMatcher": []
         }
+	],
+    "inputs": [
+        {
+            "id": "version",
+            "description": "Version bump:",
+            "type": "pickString",
+            "options": ["none", "patch", "minor", "major"],
+            "default": "none"
+        },
     ]
 }

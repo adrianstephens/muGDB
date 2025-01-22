@@ -1,132 +1,119 @@
 
-export abstract class OutputRecord {
-	public abstract type?:	any;
-	public klass?:			string;
-	public results:			Record<string, any> = {};
+// MI messages
 
-	public constructor(public readonly token: number) {}
-
-	public get isError() { return this.klass === 'error'; }
-	isAsyncRecord():	this is AsyncRecord		{ return this instanceof AsyncRecord; }
-	isStreamRecord():	this is StreamRecord	{ return this instanceof StreamRecord; }
-}
-
-//AsyncRecord
-
-type AsyncEXEC		= '*';
-type AsyncSTATUS	= '+';
-type AsyncNOTIFY	= '=';
-type AsyncRESULT	= '^';
-type AsyncTYPE		= AsyncEXEC | AsyncSTATUS | AsyncNOTIFY | AsyncRESULT;
-
-type StreamCONSOLE	= '~';
-type StreamTARGET	= '@';
-type StreamLOG		= '&';
-type StreamTYPE		= StreamCONSOLE | StreamTARGET | StreamLOG;
-
-type reason = 'breakpoint-hit' | 'watchpoint-trigger' | 'read-watchpoint-trigger' | 'access-watchpoint-trigger'
-			| 'function-finished' | 'location-reached' | 'watchpoint-scope' | 'end-stepping-range'
-			| 'exited-signalled' | 'exited' | 'exited-normally' | 'signal-received'
-			| 'solib-event' | 'fork' | 'vfork' | 'syscall-entry'
-			| 'syscall-return' | 'exec' | 'no-history';
-
-export type OutputRecord1 = {token: number} & (
-	({type: AsyncEXEC} & (
-			{klass:	'running',	'thread-id': number}
-		|	{klass:	'stopped',	reason: reason, 'thread-id': number, 'stopped-threads':	Record<string, string>, core: string}
-	))
-	| {
-		type: AsyncSTATUS,
-	}
-	| ({type: AsyncNOTIFY} & (
-			{klass: 'thread-group-added',	id: string}
-		| 	{klass: 'thread-group-removed',	id: string}
-		| 	{klass: 'thread-group-started',	id: string,		pid: 			string}
-		| 	{klass: 'thread-group-exited',	id: string, 	'exit-code'?:	string}
-		| 	{klass: 'thread-created',		id: string, 	'group-id':		string}
-		| 	{klass: 'thread-exited',		id: string, 	'group-id':		string}
-		| 	{klass: 'thread-selected',		id: string, 	frame?:			string}
-		| 	({klass: 'library-loaded'} & Module)
-		| 	{klass: 'library-unloaded',		id: string, 	'target-name':	string, 'host-name': string}
-		| 	{klass: 'traceframe-changed',	num: string,	tracepoint:		string}
-		| 	{klass: 'traceframe-changed',	end: string}
-		| 	{klass: 'tsv-created',			name: string,	initial: string}
-		| 	{klass: 'tsv-deleted',			name: string}
-		| 	{klass: 'tsv-modified',			name: string,	initial: string,	current?: string}
-		| 	{klass: 'breakpoint-created',	bkpt: Breakpoint}
-		| 	{klass: 'breakpoint-modified',	bkpt: Breakpoint}
-		| 	{klass: 'breakpoint-deleted',	id: string}
-		| 	{klass: 'record-started',		'thread-group': string,	method: string,	format?: string}
-		| 	{klass: 'record-stopped',		'thread-group': string}
-		| 	{klass: 'cmd-param-changed',	param: string,	value: string}
-		| 	{klass: 'memory-changed',		'thread-group': string,	addr: string,	len: string,	type?: string}
-	))
-	| ({type: AsyncRESULT} & (
-			{klass:	'done',					results: Record<string, any>}
-		|	{klass:	'running',				results: Record<string, any>}
-		|	{klass:	'connected'}
-		|	{klass:	'error',				msg: string, code: string}
-		|	{klass:	'undefined-command'}
-		|	{klass:	'exit'}
-
-	))
-	| {type: StreamTYPE, value: string}
-);
-
-export enum AsyncRecordType {
+export const enum RecordType {
+	CONSOLE = '~',
+	TARGET	= '@',
+	LOG		= '&',
 	EXEC	= '*',
 	STATUS	= '+',
 	NOTIFY	= '=',
 	RESULT	= '^',
 }
 
-export class AsyncRecord extends OutputRecord {
-	constructor(token: number, public type: AsyncRecordType, public klass?: string) {
-		super(token);
-	}
-}
+type AsyncTYPE		= RecordType.EXEC | RecordType.STATUS | RecordType.NOTIFY | RecordType.RESULT;
+type StreamTYPE		= RecordType.CONSOLE | RecordType.TARGET | RecordType.LOG;
 
-//StreamRecord
+export type StreamRecord	= {$type: StreamTYPE, cstring: string};
+export type StatusRecord	= {$type: RecordType.STATUS};
 
-export enum StreamRecordType {
-	CONSOLE = '~',
-	TARGET	= '@',
-	LOG		= '&'
-}
+export type ExecRecord1 	= {$type: RecordType.EXEC, 'thread-id': string} & (
+	{$class:	'running'}
+|	({$class:'stopped',	'stopped-threads':	string, core: string} & (
+		{reason: 'breakpoint-hit',		bkptno: string, frame: Frame}
+	|	{reason: 'function-finished',	frame: Frame}
+	|	{reason: 'location-reached',	frame: Frame}
+	|	{reason: 'signal-received',		'signal-name': string, 'signal-meaning': string, frame: Frame}
+	|	{reason: 'exited',				'exit-code': string}
+	|	{reason: 'exited-normally'}
+	|	{reason: 'no-history'}
+	|	{reason: 'end-stepping-range',	frame: Frame}
+	|	{reason: 'fork',				newtid: string, frame: Frame}
+	|	{reason: 'vfork',				newtid: string, frame: Frame}
+	|	{reason: 'syscall-entry',		frame: Frame}
+	|	{reason: 'syscall-return',		frame: Frame}
+	|	{reason: 'exec',				frame: Frame}
+	|	{reason: 'solib-event'}
+	|	{reason: 'watchpoint-trigger'}
+	|	{reason: 'read-watchpoint-trigger'}
+	|	{reason: 'access-watchpoint-trigger'}
+	|	{reason: 'watchpoint-scope'}
+	|	{reason: 'exited-signalled'}
+))
+);
 
-export class StreamRecord extends OutputRecord {
-	constructor(token: number, public type: StreamRecordType, public cstring: string) {
-		super(token);
-	}
-}
+export type NotifyRecord	= {$type: RecordType.NOTIFY} & (
+	{$class: 'thread-group-added',		id: string}
+| 	{$class: 'thread-group-removed',	id: string}
+| 	{$class: 'thread-group-started',	id: string,		pid: 			string}
+| 	{$class: 'thread-group-exited',		id: string, 	'exit-code'?:	string}
+| 	{$class: 'thread-created',			id: string, 	'group-id':		string}
+| 	{$class: 'thread-exited',			id: string, 	'group-id':		string}
+| 	{$class: 'thread-selected',			id: string, 	frame?:			string}
+| 	({$class:'library-loaded'}			& Module)
+| 	{$class: 'library-unloaded',		id: string, 	'target-name':	string, 'host-name': string}
+| 	{$class: 'traceframe-changed',		num: string,	tracepoint:		string}
+| 	{$class: 'traceframe-changed',		end: string}
+| 	{$class: 'tsv-created',				name: string,	initial: string}
+| 	{$class: 'tsv-deleted',				name: string}
+| 	{$class: 'tsv-modified',			name: string,	initial: string,	current?: string}
+| 	{$class: 'breakpoint-created',		bkpt: Breakpoint}
+| 	{$class: 'breakpoint-modified',		bkpt: Breakpoint}
+| 	{$class: 'breakpoint-deleted',		id: string}
+| 	{$class: 'record-started',			'thread-group': string,	method: string,	format?: string}
+| 	{$class: 'record-stopped',			'thread-group': string}
+| 	{$class: 'cmd-param-changed',		param: string,	value: string}
+| 	{$class: 'memory-changed',			'thread-group': string,	addr: string,	len: string,	type?: string}
+);
+
+export type Results			= Record<string, any>;
+export type ResultRecord	= {$type: RecordType.RESULT} & (
+	({$class:	'done'}					& Results)
+|	({$class:	'running'}				& Results)
+|	{$class:	'connected'}
+|	{$class:	'error',				msg: string, code: string}
+|	{$class:	'undefined-command'}
+|	{$class:	'exit'}
+);
+
+
+export type Token = {$token: number};
+
+export type OutputRecord = Token & (
+		ExecRecord1
+	|	StatusRecord
+	|	NotifyRecord
+	|	ResultRecord
+	|	StreamRecord
+);
 
 
 // MI structures
 
 export interface Line {
-	line:		string;
-	pc:			string;
+	line:			string;
+	pc:				string;
 }
 
 export interface Memory {
-	begin:		string,
-	offset:		string;
-	end:		string;
-	contents:	string
+	begin:			string,
+	offset:			string;
+	end:			string;
+	contents:		string
 }
 
 export interface Frame {
-	level:		string; // The frame number, 0 being the topmost frame, i.e., the innermost function.
-	addr:		string; // The $pc value for that frame.
-	func:		string; // Function name.
-	file:		string; // File name of the source file where the function lives.
-	fullname:	string; // The full file name of the source file where the function lives.
-	line:		string; // Line number corresponding to the $pc.
-	from:		string; // The shared library where this function is defined. This is only given if the frame’s function is not known.
-	arch:		string; // Frame’s architecture.
+	level:			string; // The frame number, 0 being the topmost frame, i.e., the innermost function.
+	addr:			string; // The $pc value for that frame.
+	func:			string; // Function name.
+	file:			string; // File name of the source file where the function lives.
+	fullname:		string; // The full file name of the source file where the function lives.
+	line:			string; // Line number corresponding to the $pc.
+	from:			string; // The shared library where this function is defined. This is only given if the frame’s function is not known.
+	arch:			string; // Frame’s architecture.
 }
 export interface ListFrames {
-	stack:		[string, Frame][];
+	stack:			[string, Frame][];
 }
 
 export interface Variable {
@@ -184,23 +171,23 @@ export interface SourceFile {
 }
 
 export interface Register {
-	number:			string;
-	value:			string;
+	number:				string;
+	value:				string;
 }
 
 export interface StackVariable {
-	name:			string;
-	type?:			string;
-	value?:			string;
+	name:				string;
+	type?:				string;
+	value?:				string;
 }
 export interface StackVariables {
-	variables:		StackVariable[];
+	variables:			StackVariable[];
 }
 
 export interface Symbols {
 	debug: {
-		filename:	string;
-		fullname:	string;
+		filename:		string;
+		fullname:		string;
 		symbols: {
 			line:			string;
 			name:			string;
@@ -211,16 +198,16 @@ export interface Symbols {
 }
 
 export interface Instruction {
-	address:		string; // The address at which this instruction was disassembled.
-	'func-name':	string; // The name of the function this instruction is within.
-	offset:			string; // The decimal offset in bytes from the start of ‘func-name’.
-	inst:			string; // The text disassembly for this ‘address’.
-	opcodes?:		string; // This field is only present for modes 2, 3 and 5, or when the --opcodes option ‘bytes’ or ‘display’ is used. This contains the raw opcode bytes for the ‘inst’ field.
+	address:			string; // The address at which this instruction was disassembled.
+	'func-name':		string; // The name of the function this instruction is within.
+	offset:				string; // The decimal offset in bytes from the start of ‘func-name’.
+	inst:				string; // The text disassembly for this ‘address’.
+	opcodes?:			string; // This field is only present for modes 2, 3 and 5, or when the --opcodes option ‘bytes’ or ‘display’ is used. This contains the raw opcode bytes for the ‘inst’ field.
 	src_and_asm_line?: {		// For modes 1, 3, 4 and 5, or when the --source option is used
-		line:			string; // The line number within ‘file’.
-		file:			string; // The file name from the compilation unit. This might be an absolute file name or a relative file name depending on the compile command used.
-		fullname:		string; // Absolute file name of ‘file’. It is converted to a canonical form using the source file search path (see Specifying Source Directories) and after resolving all the symbolic links.
-		line_asm_insn:	string; // This is a list of tuples containing the disassembly for ‘line’ in ‘file’. The fields of each tuple are the same as for -data-disassemble in mode 0 and 2, so ‘address’, ‘func-name’, ‘offset’, ‘inst’, and optionally ‘opcodes’.
+		line:				string; // The line number within ‘file’.
+		file:				string; // The file name from the compilation unit. This might be an absolute file name or a relative file name depending on the compile command used.
+		fullname:			string; // Absolute file name of ‘file’. It is converted to a canonical form using the source file search path (see Specifying Source Directories) and after resolving all the symbolic links.
+		line_asm_insn:		string; // This is a list of tuples containing the disassembly for ‘line’ in ‘file’. The fields of each tuple are the same as for -data-disassemble in mode 0 and 2, so ‘address’, ‘func-name’, ‘offset’, ‘inst’, and optionally ‘opcodes’.
 	}
 }
 export interface Disassemble {
@@ -228,13 +215,13 @@ export interface Disassemble {
 }
 
 export interface Thread {
-	id:				string;	//	The global numeric id assigned to the thread by GDB.
-	'target-id':	string;	//	The target-specific string identifying the thread.
-	details?:		string;	//	Additional information about the thread provided by the target. It is supposed to be human-readable and not interpreted by the frontend.
-	name?:			string;	//	The name of the thread. If the user specified a name using the thread name command, then this name is given. Otherwise, if GDB can extract the thread name from the target, then that name is given. If GDB cannot find the thread name, then this field is omitted.
-	state:			string;	//	The execution state of the thread, either ‘stopped’ or ‘running’, depending on whether the thread is presently running.
-	frame?:			Frame;	//	The stack frame currently executing in the thread. This field is only present if the thread is stopped.
-	core?:			string;	//	The value of this field is an integer number of the processor core the thread was last seen on.
+	id:					string;	//	The global numeric id assigned to the thread by GDB.
+	'target-id':		string;	//	The target-specific string identifying the thread.
+	details?:			string;	//	Additional information about the thread provided by the target. It is supposed to be human-readable and not interpreted by the frontend.
+	name?:				string;	//	The name of the thread. If the user specified a name using the thread name command, then this name is given. Otherwise, if GDB can extract the thread name from the target, then that name is given. If GDB cannot find the thread name, then this field is omitted.
+	state:				string;	//	The execution state of the thread, either ‘stopped’ or ‘running’, depending on whether the thread is presently running.
+	frame?:				Frame;	//	The stack frame currently executing in the thread. This field is only present if the thread is stopped.
+	core?:				string;	//	The value of this field is an integer number of the processor core the thread was last seen on.
 }
 
 export interface ThreadInfo {
@@ -275,10 +262,10 @@ export interface Breakpoint extends BreakpointLocation {
 }
 
 export interface Tracepoint extends Breakpoint {
-	'traceframe-usage'?:	string;
+	'traceframe-usage'?:string;
 	'static-tracepoint-marker-string-id'?: string; //	For a static tracepoint, the name of the static tracepoint marker.
-	pass?:					string; //	A tracepoint’s pass count.
-	installed?:				string; //	This field is only given for tracepoints. This is either ‘y’, meaning that the tracepoint is installed, or ‘n’, meaning that it is not.
+	pass?:				string; //	A tracepoint’s pass count.
+	installed?:			string; //	This field is only given for tracepoints. This is either ‘y’, meaning that the tracepoint is installed, or ‘n’, meaning that it is not.
 }
 
 //MIParser
@@ -311,55 +298,26 @@ export class MIParser {
 		return false;
 	}
 
-	public parse(str: string): OutputRecord | undefined {
-		let record: OutputRecord | undefined;
-
+	public parse1(str: string): OutputRecord | undefined {
 		const match = RECORD.exec(str);
 		if (match) {
-			const token = match[TOKEN_POS] ? parseInt(match[TOKEN_POS]) : NaN;
-			this.buffer = str.substring(match[0].length);
-
-			if (match[STREAM_POS]) {
-				// stream-record
-				record = new StreamRecord(token, match[STREAM_POS] as StreamRecordType, this.parseValue());
-
-			} else if (match[ASYNC_POS]) {
-				// async-record
-				record = new AsyncRecord(token, match[ASYNC_POS + 1] as AsyncRecordType, match[ASYNC_POS + 2]);
-
-				while (this.check(',')) {
-					const result = this.parseResult();
-					if (result)
-						record.results[result[0]] = result[1];
-				}
-			}
-
-			return record;
-		}
-		if (str.trimRight() !== GDB_PROMPT)
-			throw new Error('Unexpected symbol found in output.');
-	}
-
-	public parse1(str: string): OutputRecord1 | undefined {
-		const match = RECORD.exec(str);
-		if (match) {
-			const token = match[TOKEN_POS] ? parseInt(match[TOKEN_POS]) : NaN;
+			const $token = match[TOKEN_POS] ? parseInt(match[TOKEN_POS]) : NaN;
 			this.buffer = str.substring(match[0].length);
 
 			if (match[STREAM_POS]) {
 				// stream-record
 				return {
-					token,
-					type: match[STREAM_POS] as StreamTYPE,
-					value: this.parseValue()
+					$token,
+					$type: match[STREAM_POS] as StreamTYPE,
+					cstring: this.parseValue()
 				};
 
 			} else if (match[ASYNC_POS]) {
 				// async-record
 				const record: any = {
-					token,
-					type: match[ASYNC_POS + 1] as AsyncTYPE,
-					klass: match[ASYNC_POS + 2]
+					$token,
+					$type: match[ASYNC_POS + 1] as AsyncTYPE,
+					$class: match[ASYNC_POS + 2]
 				};
 
 				while (this.check(',')) {

@@ -1,4 +1,4 @@
-# muGDB | Yet another Visual Studio Code GDB Debug Adapter
+# muGDB | yet another Visual Studio Code GDB Debug Adapter
 
 A minimalist native typescript implementation of a debug adapter for GDB for use in Visual Studio Code
 
@@ -18,7 +18,7 @@ Have you ever been able to run gdb manually but couldn't get any of the existing
 
 - Command completion
 - Support for Source, Function, Instruction, and Data breakpoints
-- All breakpoint types support conditions and hit counts
+- All breakpoint types support conditions, hit counts, and logging
 - Disassembly viewing and stepping
 - Reverse debugging (where supported on GDB)
 - Registers shown as a hierarchy based on GDB register groups
@@ -50,4 +50,55 @@ These are all of the settings currently supported:
 
 `command` can be a native GDB command or an MI command
 
+#### Example Launch Scripts
+```
+{
+    "name": "ESP32 Debug muGDB",
+    "type": "mugdb",
+    "request": "launch",
+    "debugger": "/Users/adrianstephens/.espressif/tools/xtensa-esp-elf-gdb/15.2_20241112/xtensa-esp-elf-gdb/bin/xtensa-esp32-elf-gdb",
+    "debuggerArgs": [
+        "/Volumes/DevSSD/dev/SkyNetLights/firmware/.pio/build/idf-nodemcu-32s/firmware.elf",
+    ],
+    "startupCmds": [
+        "set remote hardware-watchpoint-limit 2",
+        "set remote hardware-breakpoint-limit 2",
+        "set target-async on",
+        "target extended-remote :3333",
+        "monitor reset halt",
+    ],
+    "postLoadCmds": [
+        "thbreak app_main",
+        "continue"
+    ],
+    "terminateCmds": [
+        "del"
+    ],
+    "logging": "verbose",
+    "preLaunchTask": "OpenOCD",
+},
+```
+
+```
+{
+    "name": "muGDB ssh",
+    "type": "mugdb",
+    "request": "launch",
+    "debugger":"ssh",
+    "debuggerArgs": ["ubuntu-2404np", "gdb", "/home/adrian/Documents/dev/test/a.out"],
+    "logging": "verbose",
+    "startupCmds": [
+        "set substitute-path ./stdio-common /usr/src/glibc/glibc-2.39",     //map files for gdb
+        "set substitute-path ../sysdeps /usr/src/glibc/glibc-2.39/sysdeps",
+        "set disassembly-flavor intel",
+    ],
+    "postLoadCmds": [
+        "tbreak main",
+        "run"
+    ],
+    "sourceMapping": {
+        "" : "remote:", //add 'remote:' to all source files so we load through gdb
+    }
+}
+```
 #### Additional Notes
