@@ -1,5 +1,43 @@
 import * as vscode from 'vscode';
 
+function NegativeArray<T>() {
+	const arrays = {
+		pos: [] as T[],
+		neg: [] as T[],
+	};
+	return new Proxy(arrays, {
+		get: (arrays, index: string): T => {
+			const i = +index;
+			return i < 0 ? arrays.neg[-i] : arrays.pos[i];
+		},
+		set: (arrays, index: string, value: T) => {
+			const i = +index;
+			if (i < 0)
+				arrays.neg[-i] = value;
+			else
+			arrays.pos[i] = value;
+			return true;
+		},
+		has: (arrays, index: string) => {
+			const i = +index;
+			return i < 0 ? -i in arrays.neg : i in arrays.pos;
+		},
+		ownKeys: (arrays) => {
+			const keys = [...Object.keys(arrays.neg).reverse().map(i => '-' + i), ...Object.keys(arrays.pos)];
+			return keys;
+			//return [...Object.keys(arrays.neg).reverse().map(i => '-' + i), ...Object.keys(arrays.pos)];
+		},
+		getOwnPropertyDescriptor: (arrays, index: string) => {
+			return {writable: true, enumerable: true, configurable: true};
+			const desc = index[0] === '-'
+				? Object.getOwnPropertyDescriptor(arrays.neg, index.slice(1))
+				: Object.getOwnPropertyDescriptor(arrays.pos, index);
+			return desc;
+			//return Object.getOwnPropertyDescriptor(index[0] === '-' ? arrays.neg : arrays.pos, index);
+		},
+	}) as unknown as T[];
+}
+
 export class ANSIOutputChannel implements vscode.OutputChannel {
 	private inner: vscode.OutputChannel;
 	private editor?: vscode.TextEditor;

@@ -1,98 +1,18 @@
-
-// MI messages
-
-export const enum RecordType {
-	CONSOLE = '~',
-	TARGET	= '@',
-	LOG		= '&',
-	EXEC	= '*',
-	STATUS	= '+',
-	NOTIFY	= '=',
-	RESULT	= '^',
-}
-
-type AsyncTYPE		= RecordType.EXEC | RecordType.STATUS | RecordType.NOTIFY | RecordType.RESULT;
-type StreamTYPE		= RecordType.CONSOLE | RecordType.TARGET | RecordType.LOG;
-
-export type StreamRecord	= {$type: StreamTYPE, cstring: string};
-export type StatusRecord	= {$type: RecordType.STATUS};
-
-export type ExecRecord1 	= {$type: RecordType.EXEC, 'thread-id': string} & (
-	{$class:	'running'}
-|	({$class:'stopped',	'stopped-threads':	string, core: string} & (
-		{reason: 'breakpoint-hit',		bkptno: string, frame: Frame}
-	|	{reason: 'function-finished',	frame: Frame}
-	|	{reason: 'location-reached',	frame: Frame}
-	|	{reason: 'signal-received',		'signal-name': string, 'signal-meaning': string, frame: Frame}
-	|	{reason: 'exited',				'exit-code': string}
-	|	{reason: 'exited-normally'}
-	|	{reason: 'no-history'}
-	|	{reason: 'end-stepping-range',	frame: Frame}
-	|	{reason: 'fork',				newtid: string, frame: Frame}
-	|	{reason: 'vfork',				newtid: string, frame: Frame}
-	|	{reason: 'syscall-entry',		frame: Frame}
-	|	{reason: 'syscall-return',		frame: Frame}
-	|	{reason: 'exec',				frame: Frame}
-	|	{reason: 'solib-event'}
-	|	{reason: 'watchpoint-trigger'}
-	|	{reason: 'read-watchpoint-trigger'}
-	|	{reason: 'access-watchpoint-trigger'}
-	|	{reason: 'watchpoint-scope'}
-	|	{reason: 'exited-signalled'}
-))
-);
-
-export type NotifyRecord	= {$type: RecordType.NOTIFY} & (
-	{$class: 'thread-group-added',		id: string}
-| 	{$class: 'thread-group-removed',	id: string}
-| 	{$class: 'thread-group-started',	id: string,		pid: 			string}
-| 	{$class: 'thread-group-exited',		id: string, 	'exit-code'?:	string}
-| 	{$class: 'thread-created',			id: string, 	'group-id':		string}
-| 	{$class: 'thread-exited',			id: string, 	'group-id':		string}
-| 	{$class: 'thread-selected',			id: string, 	frame?:			string}
-| 	({$class:'library-loaded'}			& Module)
-| 	{$class: 'library-unloaded',		id: string, 	'target-name':	string, 'host-name': string}
-| 	{$class: 'traceframe-changed',		num: string,	tracepoint:		string}
-| 	{$class: 'traceframe-changed',		end: string}
-| 	{$class: 'tsv-created',				name: string,	initial: string}
-| 	{$class: 'tsv-deleted',				name: string}
-| 	{$class: 'tsv-modified',			name: string,	initial: string,	current?: string}
-| 	{$class: 'breakpoint-created',		bkpt: Breakpoint}
-| 	{$class: 'breakpoint-modified',		bkpt: Breakpoint}
-| 	{$class: 'breakpoint-deleted',		id: string}
-| 	{$class: 'record-started',			'thread-group': string,	method: string,	format?: string}
-| 	{$class: 'record-stopped',			'thread-group': string}
-| 	{$class: 'cmd-param-changed',		param: string,	value: string}
-| 	{$class: 'memory-changed',			'thread-group': string,	addr: string,	len: string,	type?: string}
-);
-
-export type Results			= Record<string, any>;
-export type ResultRecord	= {$type: RecordType.RESULT} & (
-	({$class:	'done'}					& Results)
-|	({$class:	'running'}				& Results)
-|	{$class:	'connected'}
-|	{$class:	'error',				msg: string, code: string}
-|	{$class:	'undefined-command'}
-|	{$class:	'exit'}
-);
-
-
-export type Token = {$token: number};
-
-export type OutputRecord = Token & (
-		ExecRecord1
-	|	StatusRecord
-	|	NotifyRecord
-	|	ResultRecord
-	|	StreamRecord
-);
-
-
+//-----------------------------------------------------------------------------
 // MI structures
+//-----------------------------------------------------------------------------
+
+export interface Value {
+	value:			string;
+}
 
 export interface Line {
 	line:			string;
 	pc:				string;
+}
+
+export interface Lines {
+	lines:			Line[];
 }
 
 export interface Memory {
@@ -102,6 +22,27 @@ export interface Memory {
 	contents:		string
 }
 
+export interface MemoryReadBytes {
+	memory: 		Memory[];
+}
+
+export interface MemoryRead {
+	addr:			string,
+	'nr-bytes':		string,
+	'total-bytes':	string,
+	'next-row':		string,
+	'prev-row':		string,
+	'next-page':	string,
+	'prev-page':	string,
+	memory: 		Memory[];
+}
+
+//export interface Location {
+//	func?:			string; //	The function in which the location appears, if known
+//	file?:			string; //	The name of the source file which contains this location, if known
+//	fullname?:		string; //	The full file name of the source file which contains this location if known
+//	line?:			string; //	The line number at which this location appears, if known
+//}
 export interface Frame {
 	level:			string; // The frame number, 0 being the topmost frame, i.e., the innermost function.
 	addr:			string; // The $pc value for that frame.
@@ -112,7 +53,8 @@ export interface Frame {
 	from:			string; // The shared library where this function is defined. This is only given if the frame’s function is not known.
 	arch:			string; // Frame’s architecture.
 }
-export interface ListFrames {
+
+export interface Stack {
 	stack:			[string, Frame][];
 }
 
@@ -135,7 +77,7 @@ export interface ChildVariable extends Variable {
 	frozen:			string;	//	If the variable object is frozen, this variable will be present with a value of 1.
 }
 
-export interface ListChildren {
+export interface Children {
 	children: [string, ChildVariable][];
 	displayhint:	string;	//	A dynamic varobj can supply a display hint to the front end. The value comes directly from the Python pretty-printer object’s display_hint method. See Pretty Printing API.
 	has_more:		string;	//	This is an integer attribute which is nonzero if there are children remaining after the end of the selected range.
@@ -164,15 +106,25 @@ export interface Module {
 	ranges:				{from: string,to: string}[],
 }
 
+export interface Modules {
+	'shared-libraries':	Module[];
+}
+
 export interface SourceFile {
 	file: 				string,
 	fullname:			string,
 	'debug-fully-read': string
 }
+export interface SourceFiles {
+	files:				SourceFile[];
+}
 
 export interface Register {
 	number:				string;
 	value:				string;
+}
+export interface Registers {
+	'register-values': Register[]
 }
 
 export interface StackVariable {
@@ -185,33 +137,48 @@ export interface StackVariables {
 }
 
 export interface Symbols {
-	debug: {
-		filename:		string;
-		fullname:		string;
-		symbols: {
-			line:			string;
-			name:			string;
-			type:			string
-			description:	string;
+	symbols: {
+		debug: {
+			filename:		string;
+			fullname:		string;
+			symbols: {
+				line:			string;
+				name:			string;
+				type:			string
+				description:	string;
+			}[];
 		}[];
-	}[];
+	}
 }
 
+//For modes 0 and 2, and when the --source option is not used
 export interface Instruction {
 	address:			string; // The address at which this instruction was disassembled.
 	'func-name':		string; // The name of the function this instruction is within.
 	offset:				string; // The decimal offset in bytes from the start of ‘func-name’.
 	inst:				string; // The text disassembly for this ‘address’.
 	opcodes?:			string; // This field is only present for modes 2, 3 and 5, or when the --opcodes option ‘bytes’ or ‘display’ is used. This contains the raw opcode bytes for the ‘inst’ field.
-	src_and_asm_line?: {		// For modes 1, 3, 4 and 5, or when the --source option is used
-		line:				string; // The line number within ‘file’.
-		file:				string; // The file name from the compilation unit. This might be an absolute file name or a relative file name depending on the compile command used.
-		fullname:			string; // Absolute file name of ‘file’. It is converted to a canonical form using the source file search path (see Specifying Source Directories) and after resolving all the symbolic links.
-		line_asm_insn:		string; // This is a list of tuples containing the disassembly for ‘line’ in ‘file’. The fields of each tuple are the same as for -data-disassemble in mode 0 and 2, so ‘address’, ‘func-name’, ‘offset’, ‘inst’, and optionally ‘opcodes’.
-	}
 }
-export interface Disassemble {
+
+// For modes 1, 3, 4 and 5, or when the --source option is used
+export interface SourceAsmLine {
+	line:			string; // The line number within ‘file’.
+	file:			string; // The file name from the compilation unit. This might be an absolute file name or a relative file name depending on the compile command used.
+	fullname:		string; // Absolute file name of ‘file’. It is converted to a canonical form using the source file search path (see Specifying Source Directories) and after resolving all the symbolic links.
+	line_asm_insn:	Instruction[]; // This is a list of tuples containing the disassembly for ‘line’ in ‘file’. The fields of each tuple are the same as for -data-disassemble in mode 0 and 2, so ‘address’, ‘func-name’, ‘offset’, ‘inst’, and optionally ‘opcodes’.
+}
+
+export interface DisassembleNoSource {
 	asm_insns: Instruction[];
+}
+export interface DisassembleSource {
+	asm_insns: ['src_and_asm_line', SourceAsmLine][];
+}
+
+export type Disassemble = DisassembleNoSource | DisassembleSource;
+
+export function hasSource(dis: Disassemble): dis is DisassembleSource {
+	return (dis.asm_insns[0] as any)[0] === 'src_and_asm_line';
 }
 
 export interface Thread {
@@ -231,23 +198,23 @@ export interface ThreadInfo {
 
 export interface BreakpointLocation {
 	number:				string; //	The breakpoint number, or the location number as a dotted pair
-	enabled:			string; //	y: the location is enabled; n: the location is disabled; N: the location is disabled because the breakpoint is disabled.
+	enabled:			'y'|'n'|'N'; //	y: the location is enabled; n: the location is disabled; N: the location is disabled because the breakpoint is disabled.
 	addr?:				string; //	The address of this location as an hexadecimal number; or the string ‘<PENDING>’, for a pending breakpoint; or the string ‘<MULTIPLE>’, for a breakpoint with multiple locations
-	addr_flags?:		string; //	Optional field containing any flags related to the address. These flags are architecture-dependent; see Architectures for their meaning for a particular CPU.
-	func?:				string; //	If known, the function in which the location appears. If not known, this field is not present.
-	file?:				string; //	The name of the source file which contains this location, if known. If not known, this field is not present.
-	fullname?:			string; //	The full file name of the source file which contains this location, if known. If not known, this field is not present.
-	line?:				string; //	The line number at which this location appears, if known. If not known, this field is not present.
-	'thread-groups'?:	string; //	The thread groups this location is in.
+	addr_flags?:		string; //	Optional architecture-dependent flags related to the address
+	func?:				string; //	The function in which the location appears, if known
+	file?:				string; //	The name of the source file which contains this location, if known
+	fullname?:			string; //	The full file name of the source file which contains this location if known
+	line?:				string; //	The line number at which this location appears, if known
+	'thread-groups'?:	string; //	The thread groups this location is in
 }
 
 export interface Breakpoint extends BreakpointLocation {
 	type:				string; //	The type of the breakpoint. For ordinary breakpoints this will be ‘breakpoint’, but many values are possible.
 	'catch-type'?:		string; //	If the type of the breakpoint is ‘catchpoint’, then this indicates the exact type of catchpoint.
-	disp:				string; //	This is the breakpoint disposition—either ‘del’, meaning that the breakpoint will be deleted at the next stop, or ‘keep’, meaning that the breakpoint will not be deleted.
+	disp:				'del'|'keep'; //	This is the breakpoint disposition—either ‘del’, meaning that the breakpoint will be deleted at the next stop, or ‘keep’, meaning that the breakpoint will not be deleted.
 	at?:				string; //	If the source file is not known, this field may be provided. If provided, this holds the address of the breakpoint, possibly followed by a symbol name.
 	pending?:			string; //	If this breakpoint is pending, this field is present and holds the text used to set the breakpoint, as entered by the user.
-	'evaluated-by'?:	string; //	Where this breakpoint’s condition is evaluated, either ‘host’ or ‘target’.
+	'evaluated-by'?:	'host'|'target'; //	Where this breakpoint’s condition is evaluated
 	thread?:			string; //	If this is a thread-specific breakpoint, then this identifies the thread in which the breakpoint can trigger.
 	inferior?:			string; //	If this is an inferior-specific breakpoint, this this identifies the inferior in which the breakpoint can trigger.
 	task?:				string; //	If this breakpoint is restricted to a particular Ada task, then this field will hold the task identifier.
@@ -255,10 +222,10 @@ export interface Breakpoint extends BreakpointLocation {
 	ignore?:			string; //	The ignore count of the breakpoint.
 	enable?:			string; //	The enable count of the breakpoint.
 	mask?:				string; //	For a masked watchpoint, this is the mask.
-	'original-location':string; //	The location of the breakpoint as originally specified by the user. This field is optional.
+	'original-location'?:string; //	The location of the breakpoint as originally specified by the user.
 	times:				string; //	The number of times the breakpoint has been hit.
 	what?:				string; //	Some extra data, the exact contents of which are type-dependent.
-	locations?: BreakpointLocation[]; //	This field is present if the breakpoint has multiple locations. It is also exceptionally present if the breakpoint is enabled and has a single, disabled location.
+	locations?: BreakpointLocation[]; //	present if the breakpoint has multiple locations, or exceptionally if the breakpoint is enabled and has a single, disabled location
 }
 
 export interface Tracepoint extends Breakpoint {
@@ -268,7 +235,114 @@ export interface Tracepoint extends Breakpoint {
 	installed?:			string; //	This field is only given for tracepoints. This is either ‘y’, meaning that the tracepoint is installed, or ‘n’, meaning that it is not.
 }
 
-//MIParser
+export interface BreakpointInsert {
+	bkpt: Breakpoint;
+}
+export interface WatchpointInsert {
+	wpt: Breakpoint;
+}
+
+//-----------------------------------------------------------------------------
+// MI messages
+//-----------------------------------------------------------------------------
+
+export const enum RecordType {
+	CONSOLE = '~',
+	TARGET	= '@',
+	LOG		= '&',
+	EXEC	= '*',
+	STATUS	= '+',
+	NOTIFY	= '=',
+	RESULT	= '^',
+}
+
+type AsyncTYPE		= RecordType.EXEC | RecordType.STATUS | RecordType.NOTIFY | RecordType.RESULT;
+type StreamTYPE		= RecordType.CONSOLE | RecordType.TARGET | RecordType.LOG;
+
+export type StreamRecord	= {$type: StreamTYPE, cstring: string};
+export type StatusRecord	= {$type: RecordType.STATUS};
+
+export type ExecRecord 		= {$type: RecordType.EXEC, 'thread-id': string} & (
+	{$class:	'running'}
+|	({$class:	'stopped',	'stopped-threads':	string, core: string} & (
+		{reason: 'breakpoint-hit',		bkptno: string, frame: Frame}
+	|	{reason: 'function-finished',	frame: Frame}
+	|	{reason: 'location-reached',	frame: Frame}
+	|	{reason: 'signal-received',		'signal-name': string, 'signal-meaning': string, frame: Frame}
+	|	{reason: 'exited',				'exit-code': string}
+	|	{reason: 'exited-normally'}
+	|	{reason: 'no-history'}
+	|	{reason: 'end-stepping-range',	frame: Frame}
+	|	{reason: 'fork',				newtid: string, frame: Frame}
+	|	{reason: 'vfork',				newtid: string, frame: Frame}
+	|	{reason: 'syscall-entry',		frame: Frame}
+	|	{reason: 'syscall-return',		frame: Frame}
+	|	{reason: 'exec',				frame: Frame}
+	|	{reason: 'solib-event'}
+	|	{reason: 'watchpoint-trigger'}
+	|	{reason: 'read-watchpoint-trigger'}
+	|	{reason: 'access-watchpoint-trigger'}
+	|	{reason: 'watchpoint-scope'}
+	|	{reason: 'exited-signalled'}
+	))
+);
+
+export type NotifyRecord	= {$type: RecordType.NOTIFY} & (
+	{$class: 	'thread-group-added',	id: string}
+| 	{$class: 	'thread-group-removed',	id: string}
+| 	{$class: 	'thread-group-started',	id: string,		pid: 			string}
+| 	{$class: 	'thread-group-exited',	id: string, 	'exit-code'?:	string}
+| 	{$class: 	'thread-created',		id: string, 	'group-id':		string}
+| 	{$class: 	'thread-exited',		id: string, 	'group-id':		string}
+| 	{$class: 	'thread-selected',		id: string, 	frame?:			string}
+| 	({$class:	'library-loaded'}		& Module)
+| 	{$class: 	'library-unloaded',		id: string, 	'target-name':	string, 'host-name': string}
+| 	{$class: 	'traceframe-changed',	num: string,	tracepoint:		string}
+| 	{$class: 	'traceframe-changed',	end: string}
+| 	{$class: 	'tsv-created',			name: string,	initial: string}
+| 	{$class: 	'tsv-deleted',			name: string}
+| 	{$class: 	'tsv-modified',			name: string,	initial: string,	current?: string}
+| 	{$class: 	'breakpoint-created',	bkpt: Breakpoint}
+| 	{$class: 	'breakpoint-modified',	bkpt: Breakpoint}
+| 	{$class: 	'breakpoint-deleted',	id: string}
+| 	{$class: 	'record-started',		'thread-group': string,	method: string,	format?: string}
+| 	{$class: 	'record-stopped',		'thread-group': string}
+| 	{$class: 	'cmd-param-changed',	param: string,	value: string}
+| 	{$class: 	'memory-changed',		'thread-group': string,	addr: string,	len: string,	type?: string}
+);
+
+export type Results			= Record<string, any>;
+export type ResultRecord	= {$type: RecordType.RESULT} & (
+	({$class:	'done'}					& Results)
+|	({$class:	'running'}				& Results)
+|	{$class:	'connected'}
+|	{$class:	'error',				msg: string, code: string}
+|	{$class:	'exit'}
+);
+
+
+type Token = {$token: number};
+
+export type OutputRecord = Token & (
+		ExecRecord
+	|	StatusRecord
+	|	NotifyRecord
+	|	ResultRecord
+	|	StreamRecord
+);
+
+export function MakeError(msg: string, code: string): ResultRecord {
+	return {
+		$type:	RecordType.RESULT as const,
+		$class: 'error' as const,
+		msg,
+		code
+	};
+}
+
+//-----------------------------------------------------------------------------
+// Parser
+//-----------------------------------------------------------------------------
 
 const VARIABLE		= /^([a-zA-Z_][a-zA-Z0-9_-]*)=/;
 const GDB_PROMPT	= '(gdb)';
@@ -284,7 +358,7 @@ const escapes: Record<string, string> = {
 	r: '\r', n: '\n', t: '\t', v: '\v', '"': '"', "'": "'", '\\': '\\'
 };
 
-export class MIParser {
+export class Parser {
 	private buffer = '';
 
 	private skip(n: number) {
@@ -298,10 +372,10 @@ export class MIParser {
 		return false;
 	}
 
-	public parse1(str: string): OutputRecord | undefined {
+	public parse(str: string): OutputRecord | undefined {
 		const match = RECORD.exec(str);
 		if (match) {
-			const $token = match[TOKEN_POS] ? parseInt(match[TOKEN_POS]) : NaN;
+			const $token = match[TOKEN_POS] ? parseInt(match[TOKEN_POS]) : 0;
 			this.buffer = str.substring(match[0].length);
 
 			if (match[STREAM_POS]) {
@@ -309,7 +383,7 @@ export class MIParser {
 				return {
 					$token,
 					$type: match[STREAM_POS] as StreamTYPE,
-					cstring: this.parseValue()
+					cstring: this.parseValue() as string
 				};
 
 			} else if (match[ASYNC_POS]) {
@@ -341,7 +415,7 @@ export class MIParser {
 		}
 	}
 
-	private parseValue(): any {
+	private parseValue(): string | Results | any[] | undefined {
 		const cstring = CSTRING.exec(this.buffer);
 		if (cstring) {
 			// cstring
@@ -351,7 +425,7 @@ export class MIParser {
 
 		if (this.check('{')) {
 			// tuple
-			const tuple: Record<string, any> = {};
+			const tuple: Results = {};
 			while (!this.check('}')) {
 				const result = this.parseResult();
 				if (result)
@@ -363,7 +437,7 @@ export class MIParser {
 
 		if (this.check('[')) {
 			// list
-			const list: any = [];
+			const list = [];
 			if ('"{['.includes(this.buffer[0])) {
 				// Value list
 				while (!this.check(']')) {

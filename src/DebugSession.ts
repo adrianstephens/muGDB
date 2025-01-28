@@ -56,6 +56,124 @@ export function memoryReference(value: string): string | undefined {
 		return match[1];
 }
 
+function lowerBoundIndex<T>(keys: T[], value: T) {
+	let low = 0, high = keys.length;
+	while (low < high) {
+		const mid = (low + high) >> 1;
+		if (keys[mid] < value)
+			low = mid + 1;
+		else
+			high = mid;
+	}
+	return low;
+}
+
+function lowerBoundIndexF<T>(keys: T[], less: (v: T) => boolean) {
+	let low = 0, high = keys.length;
+	while (low < high) {
+		const mid = (low + high) >> 1;
+		if (less(keys[mid]))
+			low = mid + 1;
+		else
+			high = mid;
+	}
+	return low;
+}
+
+function lowerBoundValue<T>(keys: T[], value: T) {
+	const i = lowerBoundIndex(keys, value);
+	return keys[i < keys.length ? i : keys.length - 1];
+}
+
+export interface DisassemblyCacheResult {
+	base:		string;
+	address:	string;
+	ibegin:		number;
+	idiff:		number;
+	skip:		number;
+}
+
+
+class DisassemblyCacheEntry {
+	pos:		number[] = [];
+	neg:		number[] = [];
+
+	get(i: number) : number | undefined {
+		return i < 0 ? this.neg[-i] : this.pos[i];
+	}
+	set(i: number, v: number) : void {
+		if (i < 0)
+			this.neg[-i] = v;
+		else
+			this.pos[i] = v;
+	}
+	keys() : number[] {
+		return [...Object.keys(this.neg).reverse().map(i => -i), ...Object.keys(this.pos).map(i => +i)];
+	}
+	findKey(i: number) {
+		return i < 0
+			? lowerBoundValue(Object.keys(this.neg).map(i => -i), -i)
+			: lowerBoundValue(Object.keys(this.pos).map(i => +i), i);
+	}
+	findOffset(i: number) {
+		return i < 0
+			? -Math.min(lowerBoundIndexF(this.neg,  a => a > i), this.neg.length - 1)
+			:  Math.min(lowerBoundIndex(this.pos, i), this.pos.length - 1);
+	}
+}
+
+export class DisassemblyCache {
+	private cache: Record<string, DisassemblyCacheEntry> = {};
+
+	public get(base: string, ioffset: number): DisassemblyCacheResult {
+		let index = Math.floor(ioffset / 100);
+		const entry = this.cache[base];
+		if (entry) {
+			if (index) {
+				let offset = entry.get(index);
+				if (offset === undefined) {
+					index = entry.findKey(index);
+					offset = entry.get(index);
+				}
+				return {
+					base,
+					address:	adjustMemory(base, offset),
+					ibegin:		ioffset - index * 100,
+					idiff: 		index * 100,
+					skip:		0
+				};
+			}
+
+		} else {
+			const bases = Object.keys(this.cache).map(i => +i).sort((a, b)=> a - b);
+			if (bases.length) {
+				const bi		= lowerBoundIndex(bases, +base);
+				const b			= bases[bi > 0 ? bi - 1 : bi];
+				const diff		= +base - b;
+				const base2		= '0x' + b.toString(16);
+				const entry2	= this.cache[base2];
+				const index2	= entry2.findOffset(diff);
+				const offset2	= entry2.get(index2)!;
+
+				return {
+					base:		base2,
+					address:	adjustMemory(base2, offset2),
+					ibegin:		ioffset,
+					idiff: 		index2 * 100,
+					skip:		diff - offset2
+				};
+			}
+		}
+
+		return {base, address: base, ibegin: ioffset, idiff: 0, skip: 0};
+	}
+
+	public set(base: string, index: number, address2: string) {
+		(this.cache[base] ??= new DisassemblyCacheEntry).set(index, +address2 - +base);
+	}
+
+}
+
 function optionalJSON(args: any) {
 	return args ? ' ' + JSON.stringify(args) : '';
 }
@@ -117,6 +235,7 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 	protected	lastException:			DebuggerException | null = null;
 	protected	toServer?: 				NodeJS.WritableStream;
 	protected	outputBuffer = '';
+
 
 	constructor(private readonly outputChannel: vscode.OutputChannel, _configuration: vscode.DebugConfiguration) {
 		super();
@@ -190,6 +309,7 @@ export abstract class DebugSession extends Adapter.DebugAdapter {
 		this.log(LoggingLevel.basic, () => `DISPATCH(${request.seq}): ${request.command}${optionalJSON(request.arguments)}`);
 		return super.dispatchRequest(request);
 	}
+
 
 	//-----------------------------------
 	// Adapter handlers
