@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-
+/*
 function NegativeArray<T>() {
 	const arrays = {
 		pos: [] as T[],
@@ -37,7 +37,7 @@ function NegativeArray<T>() {
 		},
 	}) as unknown as T[];
 }
-
+*/
 export class ANSIOutputChannel implements vscode.OutputChannel {
 	private inner: vscode.OutputChannel;
 	private editor?: vscode.TextEditor;

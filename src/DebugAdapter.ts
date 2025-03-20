@@ -41,6 +41,8 @@ export class MemoryEvent			extends EventT<DebugProtocol.MemoryEvent>			{ event =
 type ReturnBody<T extends DebugProtocol.Response> = Promise<T['body'] | void>;
 
 export class DebugAdapter implements vscode.DebugAdapter {
+	protected client?: DebugProtocol.InitializeRequestArguments;
+	
 	private _debuggerLinesStart		= 0;
 	private _debuggerColumnsStart	= 0;
 	private clientLineToDebugger	= 0;
@@ -187,6 +189,7 @@ export class DebugAdapter implements vscode.DebugAdapter {
 	}
 
 	private async initializeRequest0(args: DebugProtocol.InitializeRequestArguments): Promise<DebugProtocol.Capabilities> {
+		this.client = args;
 		const clientLinesStart		= typeof args.linesStartAt1 === 'boolean' ? 1 : 0;
 		const clientColumnsStart	= typeof args.columnsStartAt1 === 'boolean' ? 1 : 0;
 

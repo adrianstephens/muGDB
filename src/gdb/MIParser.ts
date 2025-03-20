@@ -63,9 +63,9 @@ export interface Variable {
 	numchild:		string;	// The number of children of the varobj. This number is not necessarily reliable for a dynamic varobj. Instead, you must examine the ‘has_more’ attribute.
 	value:			string;	// The varobj’s scalar value. For a varobj whose type is some sort of aggregate (e.g., a struct), this value will not be interesting. For a dynamic varobj, this value comes directly from the Python pretty-printer object’s to_string method.
 	type:			string;	// The varobj’s type. This is a string representation of the type, as would be printed by the GDB CLI. If ‘print object’ (see set print object) is set to on, the actual (derived) type of the object is shown rather than the declared one.
-	'thread-id':	string;	// If a variable object is bound to a specific thread, then this is the thread’s global identifier.
-	dynamic:		string;	// This attribute will be present and have the value ‘1’ if the varobj is a dynamic varobj. If the varobj is not a dynamic varobj, then this attribute will not be present.
-	displayhint:	string;	// A dynamic varobj can supply a display hint to the front end. The value comes directly from the Python pretty-printer object’s display_hint method. See Pretty Printing API.
+	'thread-id'?:	string;	// If a variable object is bound to a specific thread, then this is the thread’s global identifier.
+	dynamic?:		string;	// '1’ if the varobj is a dynamic varobj, otherwise not present
+	displayhint:	string;	// from Python pretty-printer object’s display_hint method
 }
 
 export interface CreateVariable extends Variable {
@@ -74,16 +74,15 @@ export interface CreateVariable extends Variable {
 
 export interface ChildVariable extends Variable {
 	exp:			string;	//	The expression to be shown to the user by the front end to designate this child. For example this may be the name of a structure member.
-	frozen:			string;	//	If the variable object is frozen, this variable will be present with a value of 1.
+	frozen?:		string;	//	If the variable object is frozen, this variable will be present with a value of 1.
 }
 
 export interface Children {
-	children: [string, ChildVariable][];
+	children: 		[string, ChildVariable][];
 	displayhint:	string;	//	A dynamic varobj can supply a display hint to the front end. The value comes directly from the Python pretty-printer object’s display_hint method. See Pretty Printing API.
 	has_more:		string;	//	This is an integer attribute which is nonzero if there are children remaining after the end of the selected range.
 	numchild:		string;
 }
-
 
 export interface OSDataTable {
 	nr_rows:		string;
@@ -192,7 +191,7 @@ export interface Thread {
 }
 
 export interface ThreadInfo {
-	threads:				Thread[];
+	threads:			Thread[];
 	'current-thread-id'?:	string;	// The global id of the currently selected thread
 }
 
@@ -259,8 +258,8 @@ export const enum RecordType {
 type AsyncTYPE		= RecordType.EXEC | RecordType.STATUS | RecordType.NOTIFY | RecordType.RESULT;
 type StreamTYPE		= RecordType.CONSOLE | RecordType.TARGET | RecordType.LOG;
 
-export type StreamRecord	= {$type: StreamTYPE, cstring: string};
-export type StatusRecord	= {$type: RecordType.STATUS};
+export interface StreamRecord	{$type: StreamTYPE, cstring: string};
+export interface StatusRecord	{$type: RecordType.STATUS};
 
 export type ExecRecord 		= {$type: RecordType.EXEC, 'thread-id': string} & (
 	{$class:	'running'}
@@ -321,7 +320,7 @@ export type ResultRecord	= {$type: RecordType.RESULT} & (
 );
 
 
-type Token = {$token: number};
+interface Token {$token: number};
 
 export type OutputRecord = Token & (
 		ExecRecord
