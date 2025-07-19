@@ -101,6 +101,48 @@ function slice_count<T>(array: T[], start: number, count?: number) {
 }
 
 
+function parseGdbTable(lines: string[]): Record<string, string>[] {
+	if (lines.length === 0)
+		return [];
+
+	// Find header line and determine column positions
+	const headerLine = lines[0];
+	const columns: {name: string, col: number}[] = [];
+
+	// Find positions where there are 2+ spaces between words
+	const headerRegex = /\S+\s{2,}/g;
+	let match;
+	while ((match = headerRegex.exec(headerLine)) !== null)
+		columns.push({name: match[0].trim(), col: match.index});
+
+	if (columns[0].col)
+		columns.unshift({name: '0', col: 0});
+
+	// Parse data rows
+	const result: Record<string, string>[] = [];
+
+	for (let i = 1; i < lines.length; i++) {
+		const line = lines[i].trim();
+		if (!line) continue;
+
+		const row: Record<string, string> = {};
+
+		for (let j = 0; j < columns.length; ++j)
+			row[columns[j].name] = line.substring(columns[j].col, columns[j + 1]?.col).trim();
+
+		result.push(row);
+	}
+
+	return result;
+}
+
+
+const modulePattern = /^(?:.*\/)?([^\/]+?)(?:\.[\d.]+)?$/;
+
+function moduleName(name: string) {
+	return name.match(modulePattern)?.[1] || name;
+}
+
 
 //-----------------------------------------------------------------------------
 //	Registers
@@ -150,7 +192,7 @@ class Registers {
 //		const record		= await gdb.sendCommand('-data-list-register-names');
 //		this.registers	= record.results['register-names'].map((name: string) => ({name}));
 
-		const capture	= await gdb.captureConsoleCommand('maintenance print register-groups');
+		const capture	= await gdb.captureConsoleCommandSync('maintenance print register-groups');
 		const re = /^\s*(\w+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\S+)\s+([\w+,]+)/;
 		capture.map(line => re.exec(line)).filter(match => match).forEach(match => {
 			this.registers[parseInt(match![2])] = {
@@ -367,7 +409,7 @@ export class GDB extends DebugSession {
 	private globals?:			Globals;
 	private registers?:			Registers;
 	private	discache			= new DisassemblyCache;
-	private mapcache?:			Promise<Record<string, Mapping[]>>;
+	private modcache?:			Promise<Record<string, Mapping[]>>;
 
 	private variables:			Variable[] = [];
 	private threads:			DebugProtocol.StackFrame[][] = [];
@@ -440,6 +482,8 @@ export class GDB extends DebugSession {
 				case MI.RecordType.CONSOLE:
 					if (this.capture)
 						this.capture.push(record.cstring);
+					else if (record.cstring.startsWith('!@CAPTURE@!'))
+						this.capture = [record.cstring.substring(11)];
 					else
 						this.sendEvent(new Adapter.OutputEvent({category: 'console', output: record.cstring}));
 					break;
@@ -655,18 +699,30 @@ export class GDB extends DebugSession {
 	}
 
 	public async captureConsoleCommand(command: string, frameId?: number): Promise<string[]> {
-		// Create a new promise to represent this capture operation
 		let releaseLock: () => void;
-		
 		const previousLock = this.captureLock;
 		this.captureLock = new Promise<void>(resolve => { releaseLock = resolve; });
-		
+
 		try {
-			// Wait for previous capture to complete
 			await previousLock;
 			this.capture = [];
 			await this.sendCommand(`-interpreter-exec ${this.frameCommand(frameId)} console ${quoted(command)}`);
 			return this.capture;
+		} finally {
+			this.capture = undefined;
+			releaseLock!();
+		}
+	}
+
+	public async captureConsoleCommandSync(command: string, frameId?: number): Promise<string[]> {
+		let releaseLock: () => void;
+		const previousLock = this.captureLock;
+		this.captureLock = new Promise<void>(resolve => { releaseLock = resolve; });
+
+		try {
+			await previousLock;
+			await this.sendCommand(`-interpreter-exec ${this.frameCommand(frameId)} console ${quoted(`python print("!@CAPTURE@!" + gdb.execute(${quoted(command)}, to_string=True))`)}`);
+			return this.capture!.map(i => i.split('\n')).flat();
 		} finally {
 			this.capture = undefined;
 			releaseLock!();
@@ -853,38 +909,39 @@ export class GDB extends DebugSession {
 			return this.remoteSources[path];
 
 		return this.remoteSources[path] = this.sources.push(async () => {
-			const capture = await this.captureConsoleCommand(`list ${path}:1,1000`);
+			const capture = await this.captureConsoleCommandSync(`list ${path}:1,1000`);
 			return capture.map(line => line.substring(line.indexOf('\t') + 1)).join('');
 		});
 	}
 
-	protected async getExecutable() : Promise<DebugProtocol.Module | undefined> {
-		const cap = await this.captureConsoleCommand('info files');
-		const i = cap.findIndex(line => line.startsWith('Local exec file:'));
-		if (i >= 0) {
-			const match = /^\s*`(.*)'/.exec(cap[i + 1]);
-			if (match) {
-				return {
-					id:				'0',
-					name:			match[1],
-					path:			match[1],
-					symbolStatus:	'loaded',
-					//addressRange:	'-'
-				};
-			}
+	protected async getExecutable(): Promise<DebugProtocol.Module | undefined> {
+		const table	= parseGdbTable(await this.captureConsoleCommandSync('info inferiors'));
+
+		// Find the active inferior (marked with *)
+		const active = table.find(row => row[0] === '*');
+		if (active && active.Executable) {
+			const mem	= await this.getModuleMemory(moduleName(active.Executable));
+
+			return {
+				id:				'0',
+				name:			path.basename(active.Executable),
+				path: 			active.Executable,
+				symbolStatus:	'loaded',
+				addressRange:	mem ? `${mem[0].start}:${mem.at(-1)!.end}` : undefined
+			};
 		}
 	}
 
-	async getModuleMapping(moduleName: string): Promise<Mapping[] | undefined> {
-		if (this.mapcache) {
-			const map	= (await this.mapcache)[moduleName];
+	async getModuleMemory(name: string): Promise<Mapping[] | undefined> {
+		if (this.modcache) {
+			const map	= (await this.modcache)[name];
 			if (map)
 				return map;
 		}
-		this.mapcache = this.captureConsoleCommand('info proc mappings').then(mappings => {
+		this.modcache = this.captureConsoleCommandSync('info proc mappings').then(mappings => {
 			const result: Record<string, Mapping[]> = {};
 			for (const i of mappings.map(line => line.trim().split(/\s+/)).filter(parts => parts.length > 5 && parts[0].startsWith('0x'))) {
-				(result[path.basename(i[5])] ??= []).push({
+				(result[moduleName(i[5])] ??= []).push({
 					start: i[0],
 					end:	i[1],
 					offset:	i[3],
@@ -894,18 +951,18 @@ export class GDB extends DebugSession {
 			return result;
 		});
 
-		return (await this.mapcache)[moduleName];
+		return (await this.modcache)[name];
 	}
 
 	protected async convertModule(record: MI.Module) : Promise<DebugProtocol.Module> {
-		const map	= await this.getModuleMapping(path.basename(record['host-name']));
+		const mem	= await this.getModuleMemory(moduleName(record['host-name']));
 
 		return {
 			id:				record.id,
 			name:			record['host-name'],
 			path:			record['target-name'],
 			symbolStatus:	+record['symbols-loaded'] ? 'loaded' : 'not loaded',
-			addressRange:	map ? `${map[0].start}:${map.at(-1)!.end}` : `${record.ranges[0].from}:${record.ranges[0].to}`
+			addressRange:	mem ? `${mem[0].start}:${mem.at(-1)!.end}` : `${record.ranges[0].from}:${record.ranges[0].to}`
 		};
 	}
 
@@ -969,7 +1026,6 @@ export class GDB extends DebugSession {
 		if (args.startupCmds?.length)
 			await this.sendCommands(args.startupCmds);
 
-		this.getExecutable().then(exec => exec && this.sendEvent(new Adapter.ModuleEvent({reason: 'new', module: exec})));
 		this.ready.fire();
 		await Promise.all(this.startupPromises);
 	}
@@ -999,6 +1055,7 @@ export class GDB extends DebugSession {
 		}
 
 		await this.sendCommands(postLoadCommands);
+		this.getExecutable().then(exec => exec && this.sendEvent(new Adapter.ModuleEvent({reason: 'new', module: exec})));
 		this.inferiorStarted = true;
 
 		if (!this.inferiorRunning)
@@ -1578,18 +1635,24 @@ export class GDB extends DebugSession {
 		const record	= await this.sendCommand<MI.Modules>(`-file-list-shared-libraries`);
 		const all		= record['shared-libraries'];
 
-		const modules	= await Promise.all(slice_count(all, args?.startModule ?? 0, args?.moduleCount)
+		let start		= args?.startModule ?? 0;
+		let count		= args?.moduleCount;
+		let exec		= start === 0 ? await this.getExecutable() : undefined;
+
+		if (!exec && start > 0)
+			--start;
+		else if (count)
+			--count;
+
+		const modules	= await Promise.all(slice_count(all, start, count)
 			.map(async (module): Promise<DebugProtocol.Module> => this.convertModule(module)));
 
-		if (modules.length === 0) {
-			const module = await this.getExecutable();
-			if (module)
-				modules.push(module);
-		}
+		if (exec)
+			modules.unshift(exec);
 
 		return {
 			modules,
-			totalModules: all.length
+			totalModules: all.length + 1
 		};
 	}
 

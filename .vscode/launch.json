@@ -16,6 +16,18 @@
 				"${workspaceFolder}/out/**/*.js",
 				"/Volumes/DevSSD/dev/vscode-extensions/modules/out/**/*.js"
 			],
+			"linux": {
+				"args": [
+					"--extensionDevelopmentPath=${workspaceFolder}",
+					"--extensionDevelopmentPath=/mnt/d/dev/vscode_ext/modules",
+					"--remote=ssh-remote+ubuntu-adrian",
+					"/mnt/e/Github/xdg-desktop-portal/xdg-desktop-portal-gnome"
+				],
+				"outFiles": [
+					"${workspaceFolder}/out/**/*.js",
+					"/mnt/d/dev/vscode_ext/modules/out/**/*.js",
+				],
+			},
 			"preLaunchTask": "${defaultBuildTask}"
 		}
 	]
