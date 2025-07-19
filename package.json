@@ -38,7 +38,13 @@
         "command": "mugdb.pickProcess",
         "title": "PickProcess",
         "category": "Debug"
+      },
+      {
+        "command": "mugdb.getTTY",
+        "title": "getTTY",
+        "category": "Debug"
       }
+
     ],
     "breakpoints": [
       {
@@ -250,7 +256,6 @@
     "@vscode/debugprotocol": "^1.68.0",
     "eslint": "^9.22.0",
     "ts-loader": "^8.1.0",
-    "typescript-eslint": "^8.26.1",
-    "vsce": "^2.15.0"
+    "typescript-eslint": "^8.26.1"
   }
 }

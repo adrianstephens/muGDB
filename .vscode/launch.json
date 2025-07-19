@@ -7,10 +7,14 @@
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
 			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}"
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				//"--extensionDevelopmentPath=${workspaceFolder}/../modules",
+				"--extensionDevelopmentPath=/Volumes/DevSSD/dev/vscode-extensions/modules",
+				"/Volumes/DevSSD/dev/shared"
 			],
 			"outFiles": [
-				"${workspaceFolder}/out/**/*.js"
+				"${workspaceFolder}/out/**/*.js",
+				"/Volumes/DevSSD/dev/vscode-extensions/modules/out/**/*.js"
 			],
 			"preLaunchTask": "${defaultBuildTask}"
 		}

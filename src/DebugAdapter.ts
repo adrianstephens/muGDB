@@ -69,9 +69,10 @@ export class DebugAdapter implements vscode.DebugAdapter {
 
 	public sendRequest(command: string, args: any, timeout: number, cb: (response: DebugProtocol.Response) => void) : number {
 		const request = {
-			type: 'request',
+			seq:	0,
+			type: 	'request',
 			command,
-			...(args && Object.keys(args).length > 0 && args)
+			arguments: args,//...(args && Object.keys(args).length > 0 && args)
 		};
 
 		this.send(request);
@@ -140,8 +141,8 @@ export class DebugAdapter implements vscode.DebugAdapter {
 	dispatchRequest(request: DebugProtocol.Request): Promise<any> {
 		switch (request.command) {
 			case 'cancel':						return this.cancelRequest(request.arguments);
-			case 'runInTerminal':				return this.runInTerminalRequest(request.arguments);
-			case 'startDebugging':				return this.startDebuggingRequest(request.arguments);
+//			case 'runInTerminal':				return this.runInTerminalRequest(request.arguments);
+//			case 'startDebugging':				return this.startDebuggingRequest(request.arguments);
 			case 'initialize':					return this.initializeRequest0(request.arguments);
 			case 'configurationDone':			return this.configurationDoneRequest(request.arguments);
 			case 'launch':						return this.launchRequest(request.arguments);
@@ -236,8 +237,6 @@ export class DebugAdapter implements vscode.DebugAdapter {
 	}
 
 	protected async cancelRequest						(_args: DebugProtocol.CancelArguments):						ReturnBody<DebugProtocol.CancelResponse>					{ return; }
-	protected async runInTerminalRequest				(_args: DebugProtocol.RunInTerminalRequestArguments):		ReturnBody<DebugProtocol.RunInTerminalResponse>				{ return; }
-	protected async startDebuggingRequest				(_args: DebugProtocol.StartDebuggingRequestArguments):		ReturnBody<DebugProtocol.StartDebuggingResponse>			{ return; }
 //	protected async initializeRequest					(_args: DebugProtocol.InitializeRequestArguments):			ReturnBody<DebugProtocol.InitializeResponse>				{ return; }
 	protected async configurationDoneRequest			(_args: DebugProtocol.ConfigurationDoneArguments):			ReturnBody<DebugProtocol.ConfigurationDoneResponse>			{ return; }
 	protected async launchRequest						(_args: DebugProtocol.LaunchRequestArguments):				ReturnBody<DebugProtocol.LaunchResponse>					{ return; }
@@ -280,6 +279,18 @@ export class DebugAdapter implements vscode.DebugAdapter {
 	protected async writeMemoryRequest					(_args: DebugProtocol.WriteMemoryArguments):				ReturnBody<DebugProtocol.WriteMemoryResponse>				{ return; }
 	protected async disassembleRequest					(_args: DebugProtocol.DisassembleArguments):				ReturnBody<DebugProtocol.DisassembleResponse>				{ return; }
 	protected async locationsRequest					(_args: DebugProtocol.LocationsArguments):					ReturnBody<DebugProtocol.LocationsResponse>					{ return; }
+
+
+	protected async runInTerminalRequest				(_args: DebugProtocol.RunInTerminalRequestArguments, timeout = 1000) {
+		return new Promise<ReturnBody<DebugProtocol.RunInTerminalResponse>>(resolve =>
+			this.sendRequest('runInTerminal', _args, timeout, response => resolve(response.body))
+		);
+	}
+	protected async startDebuggingRequest				(_args: DebugProtocol.StartDebuggingRequestArguments, timeout = 1000) {
+		return new Promise<ReturnBody<DebugProtocol.StartDebuggingResponse>>(resolve =>
+			this.sendRequest('startDebugging', _args, timeout, response => resolve(response.body))
+		);
+	}
 
 	protected customRequest(_command: string, _args: any): Promise<any> {
 		throw 'unrecognized request';

@@ -102,3 +102,15 @@ These are all of the settings currently supported:
 }
 ```
 #### Additional Notes
+
+The debugger option can also take one of these forms:
+
+**remote:\<host>:\<port>**
+
+**process:\<pid>**
+
+In these cases the following options are ignored:
+
+`debuggerArgs`  
+`cmd`  
+`env`  

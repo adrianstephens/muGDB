@@ -402,8 +402,14 @@ export class Parser {
 			}
 
 		}
-		if (str.trimRight() !== GDB_PROMPT)
-			throw new Error('Unexpected symbol found in output.');
+		if (str.trimRight() !== GDB_PROMPT) {
+			return {
+				$token: 0,
+				$type: RecordType.TARGET as const,
+				cstring: str + '\n'
+			};
+			//throw new Error('Unexpected symbol found in output.');
+		}
 	}
 
 	private parseResult(): [string, any] | undefined {
