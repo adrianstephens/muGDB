@@ -23,7 +23,8 @@
   "files": [
     "out/**/*.js",
     "assets/*",
-    "LICENSE.txt"
+    "LICENSE.txt",
+    "!**/*.map"
   ],
   "main": "./out/extension",
   "activationEvents": [
