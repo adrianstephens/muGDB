@@ -748,7 +748,7 @@ export class GDB extends DebugSession {
 			} else {
 				line = line.trim().replace(/\\/g, '/');
 				if (line && line[0] !== '#') {
-					if (line.match(/python|((if|while|define)\s+(.*))/)) {
+					if (line.match(/^python$|((if|while|define)\s+(.*))/)) {
 						python		= line === 'python';
 						building	= python ? '' : line;
 					} else if (line[0] === '!') {
@@ -1006,7 +1006,24 @@ export class GDB extends DebugSession {
 
 		} else {
 			const debuggerArgs = args.debuggerArgs || [];
-			const i = debuggerArgs.findIndex(s => s === '--args');
+/*
+			const tty	= debuggerArgs.findIndex(s => s.startsWith('--tty='));
+			if (tty >= 0) {
+				const kind = debuggerArgs[tty].substring(6);
+				if (kind === 'integrated' || kind === 'external') {
+					try {
+						const resp = await this.runInTerminalRequest({kind, cwd: '', args: ['bash']}, 100000);
+						const dev = getTTYFromPid(resp.shellProcessId);
+						console.log(dev);
+						debuggerArgs[tty] = `--tty=${dev}`;
+					} catch (e: any) {
+						console.log(e);
+					}
+				}
+			}
+*/
+
+			const i		= debuggerArgs.findIndex(s => s === '--args');
 			debuggerArgs?.splice(i, 0, '--interpreter=mi', '-q');
 			const gdb = spawn(args.debugger || 'gdb', debuggerArgs, {
 			//const gdb = spawn(args.debugger || 'gdb', ['--interpreter=mi', '-q', ...args.debuggerArgs || []], {

@@ -23,24 +23,26 @@ class GDBConfigurationProvider implements vscode.DebugConfigurationProvider {
 }
 
 // Get TTY device path from process ID
-function getTTYFromPid(pid: number): string | undefined {
-	switch (os.platform()) {
-		case 'darwin': {
-			const tty = execSync(`ps -p ${pid} -o tty=`).toString().trim();
-			if (tty && tty !== '?')
-				return `/dev/${tty}`;
-			break;
-		}
-		case 'linux': {
-			const tty = fs.readlinkSync(`/proc/${pid}/fd/0`);
-			if (tty.startsWith('/dev/'))
-				return tty;
-			break;
-		}
-		case 'win32': {
-			// Windows doesn't use TTY devices, return a named pipe path instead
-			const pipeName = `\\\\.\\pipe\\mugdb-${pid}`;
-			return pipeName;
+function getTTYFromPid(pid: number | undefined): string | undefined {
+	if (pid !== undefined) {
+		switch (os.platform()) {
+			case 'darwin': {
+				const tty = execSync(`ps -p ${pid} -o tty=`).toString().trim();
+				if (tty && tty !== '?')
+					return `/dev/${tty}`;
+				break;
+			}
+			case 'linux': {
+				const tty = fs.readlinkSync(`/proc/${pid}/fd/0`);
+				if (tty.startsWith('/dev/'))
+					return tty;
+				break;
+			}
+			case 'win32': {
+				// Windows doesn't use TTY devices, return a named pipe path instead
+				const pipeName = `\\\\.\\pipe\\mugdb-${pid}`;
+				return pipeName;
+			}
 		}
 	}
 	return undefined;
@@ -48,7 +50,7 @@ function getTTYFromPid(pid: number): string | undefined {
 
 export function activate(context: vscode.ExtensionContext) {
 	const outputChannel = vscode.window.createOutputChannel('muGDB');
-	const ttys: Record<string, {terminal: vscode.Terminal, dev: string}> = {};
+	const ttys: Record<string, vscode.Terminal> = {};
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand("mugdb.pickProcess", async (args: any) => {
@@ -72,30 +74,14 @@ export function activate(context: vscode.ExtensionContext) {
 		}),
 		vscode.commands.registerCommand("mugdb.getTTY", async (arg: any) => {
 			const name = typeof arg === 'string' ? arg : 'mugdb';
-			// If we already have a TTY path and the terminal is still active, return it
-			if (ttys[name] && ttys[name].terminal.exitStatus === undefined)
-				return ttys[name].dev;
-			
-			// Create a new terminal
-			const terminal = vscode.window.createTerminal('muGDB TTY');
-			terminal.show();
-			
-			// Get the process ID and find its TTY
-			const processId = await terminal.processId;
-			if (!processId) {
-				vscode.window.showErrorMessage('Could not get terminal process ID');
-				return undefined;
-			}
-			
-			// Get the TTY from the process ID
-			const dev = getTTYFromPid(processId);
-			if (!dev) {
-				vscode.window.showErrorMessage('Could not determine TTY device');
-				return undefined;
-			}
-			
-			ttys[name] = {terminal, dev};
-			return dev;
+
+			if (!ttys[name] || ttys[name].exitStatus !== undefined) {
+				const terminal = vscode.window.createTerminal(name);
+				terminal.show();
+				ttys[name] = terminal;
+			}			
+
+			return getTTYFromPid(await ttys[name].processId);
 		}),
 		vscode.debug.registerDebugConfigurationProvider('mugdb', new GDBConfigurationProvider),
 		vscode.debug.registerDebugAdapterDescriptorFactory('mugdb', {

@@ -39,6 +39,7 @@ export class InvalidatedEvent		extends EventT<DebugProtocol.InvalidatedEvent>		{
 export class MemoryEvent			extends EventT<DebugProtocol.MemoryEvent>			{ event = 'memory'; }
 
 type ReturnBody<T extends DebugProtocol.Response> = Promise<T['body'] | void>;
+type ReturnBody1<T extends DebugProtocol.Response> = Promise<T['body']>;
 
 export class DebugAdapter implements vscode.DebugAdapter {
 	protected client?: DebugProtocol.InitializeRequestArguments;
@@ -282,8 +283,13 @@ export class DebugAdapter implements vscode.DebugAdapter {
 
 
 	protected async runInTerminalRequest				(_args: DebugProtocol.RunInTerminalRequestArguments, timeout = 1000) {
-		return new Promise<ReturnBody<DebugProtocol.RunInTerminalResponse>>(resolve =>
-			this.sendRequest('runInTerminal', _args, timeout, response => resolve(response.body))
+		return new Promise<ReturnBody1<DebugProtocol.RunInTerminalResponse>>((resolve, reject) =>
+			this.sendRequest('runInTerminal', _args, timeout, response => {
+				if (response.success)
+					resolve(response.body);
+				else
+					reject(response.message);
+			})
 		);
 	}
 	protected async startDebuggingRequest				(_args: DebugProtocol.StartDebuggingRequestArguments, timeout = 1000) {
