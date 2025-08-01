@@ -2,6 +2,9 @@
 
 A minimalist native typescript implementation of a debug adapter for GDB for use in Visual Studio Code
 
+## ☕ Support My Work  
+If you enjoy this extension, consider [buying me a tea](https://coff.ee/adrianstephens) to support future updates!  
+
 ## Why?
 
 Have you ever been able to run gdb manually but couldn't get any of the existing vscode GDB extensions to work (well)?
